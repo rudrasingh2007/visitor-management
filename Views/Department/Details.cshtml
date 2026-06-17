@@ -1,0 +1,147 @@
+@model VisitorManagementSystem.Models.DepartmentMaster
+@{
+    ViewData["Title"] = "Department Details";
+}
+
+<div class="container-fluid px-4 py-4">
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0 bg-transparent p-0">
+            <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index" class="text-decoration-none"><i class="fa-solid fa-house me-1"></i>Home</a></li>
+            <li class="breadcrumb-item"><a asp-action="Index" class="text-decoration-none">Department List</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Department Details</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="mb-4">
+        <h3 class="fw-bold text-dark mb-1"><i class="fa-solid fa-circle-info me-2 text-primary"></i>Department Details</h3>
+        <p class="text-muted mb-0">Detailed view of department profile and assigned employees.</p>
+    </div>
+
+    <div class="row g-4">
+        <!-- Profile Card -->
+        <div class="col-12 col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center mb-4">
+                        <div class="avatar-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold fs-3 shadow-sm me-3" style="width:60px; height:60px; border-radius: 50%;">
+                            <i class="fa-solid fa-sitemap fa-xs"></i>
+                        </div>
+                        <div>
+                            <h4 class="fw-bold text-dark mb-0">@Model.DepartmentName</h4>
+                        </div>
+                    </div>
+
+                    <hr class="text-muted border-secondary opacity-25 mb-4" />
+
+                    <!-- Details List -->
+                    <table class="table table-borderless align-middle mb-4">
+                        <tr>
+                            <td class="text-muted ps-0" style="width: 40%;">Description:</td>
+                            <td class="fw-semibold text-dark">@(string.IsNullOrEmpty(Model.Description) ? "-" : Model.Description)</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted ps-0">Status:</td>
+                            <td>
+                                @if (Model.Status == "Active")
+                                {
+                                    <span class="badge bg-success-subtle text-success px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-circle-check me-1"></i>Active</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-danger-subtle text-danger px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-circle-xmark me-1"></i>Inactive</span>
+                                }
+                            </td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted ps-0">Created Date:</td>
+                            <td class="fw-semibold text-dark">@Model.CreatedDate.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted ps-0">Assigned Employees:</td>
+                            <td class="fw-bold text-primary fs-5">@Model.Employees.Count</td>
+                        </tr>
+                    </table>
+
+                    <div class="d-flex gap-2 pt-3 border-top border-secondary border-opacity-10">
+                        <a asp-action="Edit" asp-route-id="@Model.DepartmentId" class="btn btn-primary px-4 py-2 fw-semibold rounded-2 shadow-sm">
+                            <i class="fa-solid fa-pen-to-square me-2"></i>Edit Department
+                        </a>
+                        <a asp-action="Index" class="btn btn-outline-secondary px-4 py-2 rounded-2">
+                            Back to List
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Assigned Employees List -->
+        <div class="col-12 col-lg-7">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+                    <h5 class="fw-bold text-dark mb-1"><i class="fa-solid fa-users text-primary me-2"></i>Employees in Department</h5>
+                    <p class="text-muted small mb-0">List of active/inactive employees currently registered in @Model.DepartmentName.</p>
+                </div>
+                <div class="card-body p-4">
+                    @if (Model.Employees != null && Model.Employees.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light text-muted uppercase fs-8 fw-semibold">
+                                    <tr>
+                                        <th>Code</th>
+                                        <th>Name</th>
+                                        <th>Designation</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var emp in Model.Employees)
+                                    {
+                                        <tr>
+                                            <td class="fw-bold text-dark">@emp.EmployeeCode</td>
+                                            <td>
+                                                <a asp-controller="Employee" asp-action="Details" asp-route-id="@emp.EmployeeId" class="text-decoration-none fw-semibold">
+                                                    @emp.FirstName @emp.LastName
+                                                </a>
+                                            </td>
+                                            <td>@emp.Designation</td>
+                                            <td>
+                                                @if (emp.Status == "Active")
+                                                {
+                                                    <span class="badge bg-success-subtle text-success px-2 py-1 fs-9 rounded-pill">Active</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-danger-subtle text-danger px-2 py-1 fs-9 rounded-pill">Inactive</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-5">
+                            <i class="fa-regular fa-folder-open fa-3x text-muted mb-3"></i>
+                            <h6 class="fw-semibold text-muted">No Employees Found</h6>
+                            <p class="text-muted small mb-0">No employee records are currently assigned to this department.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-success-subtle { background-color: rgba(25, 135, 84, 0.1) !important; }
+    .bg-danger-subtle { background-color: rgba(220, 53, 69, 0.1) !important; }
+    .bg-secondary-subtle { background-color: rgba(108, 117, 125, 0.1) !important; }
+    .text-primary { color: #1e3c72 !important; }
+    .fs-8 { font-size: 0.75rem; }
+    .fs-9 { font-size: 0.7rem; }
+</style>

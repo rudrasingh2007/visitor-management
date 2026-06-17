@@ -1,0 +1,276 @@
+@model VisitorManagementSystem.Models.GatePassMaster
+@{
+    Layout = null;
+    var isExpired = Model.Status == "Active" && DateTime.UtcNow > Model.ExpiryDateTime;
+    var currentStatus = isExpired ? "Expired" : Model.Status;
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Print Gate Pass - @Model.GatePassNumber</title>
+    
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+    <style>
+        body {
+            background-color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        /* Badge Card styling */
+        .badge-container {
+            width: 350px;
+            margin: 30px auto;
+            border: 2px dashed #bbb;
+            border-radius: 12px;
+            padding: 20px;
+            background: #ffffff;
+            box-shadow: 0 0 10px rgba(0,0,0,0.05);
+            position: relative;
+        }
+
+        .badge-header {
+            text-align: center;
+            border-bottom: 2px solid #1e3c72;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+
+        .org-logo {
+            font-size: 1.25rem;
+            font-weight: 700;
+            color: #1e3c72;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-title {
+            font-size: 0.75rem;
+            color: #666;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 1px;
+            margin-top: 2px;
+        }
+
+        .visitor-photo {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            border: 3px solid #1e3c72;
+            object-fit: cover;
+            margin: 0 auto 10px auto;
+            display: block;
+        }
+
+        .photo-placeholder {
+            width: 110px;
+            height: 110px;
+            border-radius: 50%;
+            border: 3px dashed #ccc;
+            margin: 0 auto 10px auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #aaa;
+            background-color: #fafafa;
+        }
+
+        .visitor-name {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: #333;
+            text-align: center;
+            margin-bottom: 2px;
+        }
+
+        .visitor-company {
+            font-size: 0.8rem;
+            color: #666;
+            text-align: center;
+            margin-bottom: 12px;
+            font-weight: 500;
+        }
+
+        .qr-code {
+            width: 130px;
+            height: 130px;
+            display: block;
+            margin: 10px auto;
+            border: 1px solid #ddd;
+            padding: 5px;
+            border-radius: 6px;
+        }
+
+        .pass-info-table {
+            width: 100%;
+            font-size: 0.75rem;
+            margin-top: 15px;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+
+        .pass-info-table td {
+            padding: 3px 0;
+            vertical-align: top;
+        }
+
+        .label {
+            color: #777;
+            font-weight: 600;
+            width: 40%;
+        }
+
+        .value {
+            color: #111;
+            font-weight: 700;
+            width: 60%;
+            text-align: right;
+        }
+
+        .badge-footer {
+            text-align: center;
+            font-size: 0.65rem;
+            color: #777;
+            margin-top: 15px;
+            border-top: 1px solid #eee;
+            padding-top: 8px;
+            font-weight: 500;
+        }
+
+        .cut-instruction {
+            text-align: center;
+            font-size: 0.7rem;
+            color: #888;
+            margin-top: 10px;
+            font-style: italic;
+        }
+
+        /* Print Media Setup */
+        @@media print {
+            body {
+                background: none;
+                margin: 0;
+                padding: 0;
+            }
+            
+            .no-print {
+                display: none !important;
+            }
+
+            .badge-container {
+                margin: 0 auto;
+                box-shadow: none;
+                border: 2px dashed #999;
+                page-break-inside: avoid;
+            }
+
+            .cut-instruction {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="no-print text-center mt-3">
+        <button onclick="window.print();" class="btn btn-primary px-4 py-2 fw-semibold">
+            <i class="fa-solid fa-print me-1"></i>Print Pass Now
+        </button>
+        <button onclick="window.close();" class="btn btn-secondary px-3 py-2 fw-semibold ms-2">
+            <i class="fa-solid fa-xmark me-1"></i>Close Window
+        </button>
+    </div>
+
+    <div class="badge-container">
+        <!-- Header -->
+        <div class="badge-header">
+            <div class="org-logo"><i class="fa-solid fa-building me-1"></i>VMS Corporate</div>
+            <div class="badge-title">Visitor Gate Pass</div>
+        </div>
+
+        <!-- Visitor Photo -->
+        @if (!string.IsNullOrEmpty(Model.Visitor?.PhotoPath))
+        {
+            <img src="@Model.Visitor.PhotoPath" class="visitor-photo" alt="Visitor Photo" />
+        }
+        else
+        {
+            <div class="photo-placeholder">
+                <i class="fa-solid fa-user fa-3x"></i>
+            </div>
+        }
+
+        <!-- Visitor Name -->
+        <div class="visitor-name">@(Model.Visitor?.FirstName + " " + Model.Visitor?.LastName)</div>
+        <div class="visitor-company">@(Model.Visitor?.CompanyName ?? "Individual Visitor")</div>
+
+        <!-- QR Code -->
+        <img src="@Model.QRCodePath" class="qr-code" alt="Pass QR Code" />
+
+        <!-- Pass Information Table -->
+        <table class="pass-info-table">
+            <tr>
+                <td class="label">Pass Number</td>
+                <td class="value text-primary">@Model.GatePassNumber</td>
+            </tr>
+            <tr>
+                <td class="label">Host Employee</td>
+                <td class="value">@(Model.Employee?.FirstName + " " + Model.Employee?.LastName)</td>
+            </tr>
+            <tr>
+                <td class="label">Department</td>
+                <td class="value">@(Model.Department?.DepartmentName ?? "N/A")</td>
+            </tr>
+            <tr>
+                <td class="label">Checked In</td>
+                <td class="value">@Model.IssueDateTime.ToLocalTime().ToString("dd-MM-yyyy hh:mm tt")</td>
+            </tr>
+            <tr>
+                <td class="label">Valid Until</td>
+                <td class="value text-danger">@Model.ExpiryDateTime.ToLocalTime().ToString("dd-MM-yyyy hh:mm tt")</td>
+            </tr>
+            <tr>
+                <td class="label">Pass Status</td>
+                <td class="value">
+                    @if (currentStatus == "Active")
+                    {
+                        <span class="text-success">ACTIVE</span>
+                    }
+                    else
+                    {
+                        <span class="text-danger">@currentStatus.ToUpper()</span>
+                    }
+                </td>
+            </tr>
+        </table>
+
+        <!-- Badge Footer -->
+        <div class="badge-footer">
+            <i class="fa-solid fa-shield-halved me-1"></i>Secure Area Pass - Please wear at all times
+        </div>
+    </div>
+
+    <div class="cut-instruction">
+        <i class="fa-solid fa-scissors me-1"></i>Cut along the dotted line and insert into the badge holder.
+    </div>
+
+    <!-- Auto-trigger print on page load -->
+    <script>
+        window.onload = function() {
+            // Slight timeout to let fonts/images load
+            setTimeout(function() {
+                window.print();
+            }, 500);
+        };
+    </script>
+</body>
+</html>

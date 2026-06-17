@@ -1,0 +1,312 @@
+@model IEnumerable<VisitorManagementSystem.Models.UserMaster>
+@{
+    ViewData["Title"] = "User List";
+}
+
+<div class="container-fluid px-4 py-4">
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0 bg-transparent p-0">
+            <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index" class="text-decoration-none"><i class="fa-solid fa-house me-1"></i>Home</a></li>
+            <li class="breadcrumb-item text-muted">User Management</li>
+            <li class="breadcrumb-item active" aria-current="page">User List</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+        <div>
+            <h3 class="fw-bold text-dark mb-1"><i class="fa-solid fa-users me-2 text-primary"></i>User Master</h3>
+            <p class="text-muted mb-0">Manage system users, contact details, assigned roles, and login statuses.</p>
+        </div>
+        <div>
+            <a asp-action="Create" class="btn btn-primary px-4 py-2 fw-semibold shadow-sm">
+                <i class="fa-solid fa-user-plus me-2"></i>Add New User
+            </a>
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fa-solid fa-circle-check me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" onclick="$(this).closest('.alert').remove()"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fa-solid fa-circle-exclamation me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" onclick="$(this).closest('.alert').remove()"></button>
+        </div>
+    }
+
+    <!-- Custom Filters Card -->
+    <div class="card border-0 shadow-sm rounded-4 mb-3">
+        <div class="card-body p-3">
+            <div class="row g-3 align-items-center">
+                <!-- Status Filter -->
+                <div class="col-12 col-md-3">
+                    <label class="form-label fw-semibold text-muted small mb-1">Status Filter</label>
+                    <select id="statusFilter" class="form-select rounded-2">
+                        <option value="">All Statuses</option>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                    </select>
+                </div>
+                <!-- Role Filter -->
+                <div class="col-12 col-md-3">
+                    <label class="form-label fw-semibold text-muted small mb-1">Role Filter</label>
+                    <select id="roleFilter" class="form-select rounded-2" asp-items="ViewBag.RolesList">
+                        <option value="">All Roles</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Card -->
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" id="usersTable" style="width: 100%;">
+                    <thead class="table-light text-muted uppercase fs-7 fw-semibold">
+                        <tr>
+                            <th>Username</th>
+                            <th>Full Name</th>
+                            <th>Email</th>
+                            <th>Mobile</th>
+                            <th>Role</th>
+                            <th>Employee</th>
+                            <th>Status</th>
+                            <th class="text-end" style="min-width: 160px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="fw-bold text-dark">@item.Username</td>
+                                <td>@item.FullName</td>
+                                <td>@item.Email</td>
+                                <td>@item.MobileNumber</td>
+                                <td>
+                                    <span class="badge bg-primary px-2 py-1 fs-8">@(item.Role?.RoleName ?? "No Role")</span>
+                                </td>
+                                <td>
+                                    @if (item.Employee != null)
+                                    {
+                                        <span>@(item.Employee.FirstName + " " + (item.Employee.LastName ?? ""))</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    <!-- Toggle Status Button -->
+                                    <form asp-action="ToggleStatus" asp-route-id="@item.UserId" method="post" style="display:inline;">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="border-0 bg-transparent p-0" title="Click to Toggle Status">
+                                            @if (item.Status == "Active")
+                                            {
+                                                <span class="badge bg-success-subtle text-success px-3 py-2 fs-8 rounded-pill cursor-pointer"><i class="fa-solid fa-circle-check me-1"></i>Active</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger-subtle text-danger px-3 py-2 fs-8 rounded-pill cursor-pointer"><i class="fa-solid fa-circle-xmark me-1"></i>Inactive</span>
+                                            }
+                                        </button>
+                                    </form>
+                                </td>
+                                <td class="text-end">
+                                    <!-- View Details -->
+                                    <a asp-action="Details" asp-route-id="@item.UserId" class="btn btn-sm btn-outline-info me-1 rounded-2" title="View Details">
+                                        <i class="fa-solid fa-circle-info"></i>
+                                    </a>
+                                    <!-- Reset Password -->
+                                    <button type="button" class="btn btn-sm btn-outline-warning me-1 rounded-2 btn-reset-pwd" 
+                                            data-id="@item.UserId" data-username="@item.Username" title="Reset Password">
+                                        <i class="fa-solid fa-key"></i>
+                                    </button>
+                                    <!-- Edit -->
+                                    <a asp-action="Edit" asp-route-id="@item.UserId" class="btn btn-sm btn-outline-primary me-1 rounded-2" title="Edit User">
+                                        <i class="fa-solid fa-user-pen"></i>
+                                    </a>
+                                    <!-- Delete -->
+                                    <button type="button" class="btn btn-sm btn-outline-danger rounded-2 btn-delete-user" 
+                                            data-id="@item.UserId" data-username="@item.Username" title="Delete User">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Confirm Delete -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-dark" id="deleteModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body py-3">
+                <div class="d-flex align-items-center mb-3 text-danger">
+                    <i class="fa-solid fa-triangle-exclamation fa-2xl me-3"></i>
+                    <div>
+                        <p class="mb-0 fw-bold">Are you sure you want to delete this user?</p>
+                        <p class="mb-0 text-muted small">This action cannot be undone and will permanently remove this user account.</p>
+                    </div>
+                </div>
+                <div class="p-3 bg-light rounded-3">
+                    <strong class="text-dark">Username: </strong><span id="deleteUsername" class="fw-semibold text-primary"></span>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <form id="deleteForm" method="post" asp-action="Delete">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" id="deleteUserId" />
+                    <button type="button" class="btn btn-secondary px-3 py-2 rounded-2" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger px-3 py-2 rounded-2 fw-semibold">Delete User</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Reset Password -->
+<div class="modal fade" id="resetPwdModal" tabindex="-1" aria-labelledby="resetPwdModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-dark" id="resetPwdModalLabel"><i class="fa-solid fa-key text-warning me-2"></i>Reset Password</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" asp-action="ResetPassword" autocomplete="off">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="userId" id="resetUserId" />
+                
+                <div class="modal-body py-3">
+                    <p class="text-muted small">Set a new password for the user. Password will be stored in plain text format as configured.</p>
+                    
+                    <div class="p-2 mb-3 bg-light rounded-3 border-start border-4 border-warning">
+                        <strong class="text-dark">User: </strong><span id="resetUsername" class="fw-semibold text-primary"></span>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="newPassword" class="form-label fw-semibold text-dark">New Password <span class="text-danger">*</span></label>
+                        <input type="password" class="form-control rounded-2" id="newPassword" name="newPassword" placeholder="Enter new password" required minlength="4" />
+                    </div>
+                </div>
+                
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-secondary px-3 py-2 rounded-2" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-warning px-3 py-2 rounded-2 fw-semibold text-dark">Reset Password</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Initialize DataTable
+            var table = $('#usersTable').DataTable({
+                "paging": true,
+                "lengthChange": true,
+                "searching": true,
+                "ordering": true,
+                "info": true,
+                "autoWidth": false,
+                "responsive": true,
+                "language": {
+                    "search": "_INPUT_",
+                    "searchPlaceholder": "Search users..."
+                },
+                "buttons": [
+                    {
+                        extend: 'excel',
+                        className: 'btn btn-sm btn-outline-success me-1 rounded-2',
+                        text: '<i class="fa-solid fa-file-excel me-1"></i> Excel',
+                        exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6] }
+                    },
+                    {
+                        extend: 'pdf',
+                        className: 'btn btn-sm btn-outline-danger me-1 rounded-2',
+                        text: '<i class="fa-solid fa-file-pdf me-1"></i> PDF',
+                        exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6] }
+                    },
+                    {
+                        extend: 'print',
+                        className: 'btn btn-sm btn-outline-secondary rounded-2',
+                        text: '<i class="fa-solid fa-print me-1"></i> Print',
+                        exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6] }
+                    }
+                ],
+                "dom": "<'row mb-3'<'col-sm-12 col-md-6'lB><'col-sm-12 col-md-6'f>>" +
+                       "<'row'<'col-sm-12'tr>>" +
+                       "<'row mt-3'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>"
+            });
+ 
+            // Hook Status Filter (Column index 6)
+            $('#statusFilter').on('change', function() {
+                var val = $(this).val();
+                table.column(6).search(val ? '^\\s*' + val + '\\s*$' : '', true, false).draw();
+            });
+
+            // Hook Role Filter (Column index 4)
+            $('#roleFilter').on('change', function() {
+                var val = $(this).val();
+                table.column(4).search(val ? '^' + val + '$' : '', true, false).draw();
+            });
+
+            // Open Delete confirmation Modal
+            $(document).on('click', '.btn-delete-user', function() {
+                var userId = $(this).data('id');
+                var username = $(this).data('username');
+                
+                $('#deleteUserId').val(userId);
+                $('#deleteUsername').text(username);
+                
+                var myModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+                myModal.show();
+            });
+
+            // Open Reset Password Modal
+            $(document).on('click', '.btn-reset-pwd', function() {
+                var userId = $(this).data('id');
+                var username = $(this).data('username');
+                
+                $('#resetUserId').val(userId);
+                $('#resetUsername').text(username);
+                $('#newPassword').val('');
+                
+                var myModal = new bootstrap.Modal(document.getElementById('resetPwdModal'));
+                myModal.show();
+            });
+        });
+    </script>
+}
+
+<style>
+    .bg-success-subtle { background-color: rgba(25, 135, 84, 0.1) !important; }
+    .bg-danger-subtle { background-color: rgba(220, 53, 69, 0.1) !important; }
+    .text-primary { color: #1e3c72 !important; }
+    .fs-7 { font-size: 0.85rem; }
+    .fs-8 { font-size: 0.75rem; }
+    .cursor-pointer { cursor: pointer; }
+    .dataTables_filter input {
+        border-radius: 6px;
+        border: 1px solid #ced4da;
+        padding: 6px 12px;
+    }
+    /* dataTables_length select styled globally */
+</style>

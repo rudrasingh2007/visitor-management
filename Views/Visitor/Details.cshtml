@@ -1,0 +1,193 @@
+@model VisitorManagementSystem.Models.VisitorMaster
+@{
+    ViewData["Title"] = "Visitor Details";
+    var defaultPhoto = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23f1f3f5'/><text x='50' y='55' font-size='16' font-family='Segoe UI, Arial' font-weight='bold' fill='%236c757d' text-anchor='middle'>PHOTO</text></svg>";
+    var photo = !string.IsNullOrEmpty(Model.PhotoPath) ? Model.PhotoPath : defaultPhoto;
+}
+
+<div class="container-fluid px-4 py-4">
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0 bg-transparent p-0">
+            <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index" class="text-decoration-none"><i class="fa-solid fa-house me-1"></i>Home</a></li>
+            <li class="breadcrumb-item"><a asp-action="Index" class="text-decoration-none">Visitor List</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Visitor Details</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="mb-4">
+        <h3 class="fw-bold text-dark mb-1"><i class="fa-solid fa-circle-info me-2 text-primary"></i>Visitor Profile</h3>
+        <p class="text-muted mb-0">View full profile details, appointment histories, and past visits.</p>
+    </div>
+
+    <!-- Main Card -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            <div class="row align-items-center">
+                <!-- Photo Thumbnail -->
+                <div class="col-md-2 text-center mb-3 mb-md-0">
+                    <img src="@photo" alt="Visitor Photo" class="rounded-circle border border-2 shadow-sm" style="width: 110px; height: 110px; object-fit: cover;" />
+                </div>
+                <!-- Core Info -->
+                <div class="col-md-7 text-center text-md-start mb-3 mb-md-0">
+                    <h4 class="fw-bold text-dark mb-1">@Model.FirstName @Model.LastName</h4>
+                    <p class="text-muted mb-2"><i class="fa-solid fa-building me-2"></i>@(string.IsNullOrEmpty(Model.CompanyName) ? "Individual Visitor" : Model.CompanyName)</p>
+                    <div class="d-flex gap-2 justify-content-center justify-content-md-start flex-wrap">
+                        <span class="badge bg-secondary-subtle text-secondary px-3 py-2 fs-8 rounded-pill">@Model.Gender</span>
+                        <span class="badge bg-primary-subtle text-primary px-3 py-2 fs-8 rounded-pill">@Model.IdProofType</span>
+                        @if (Model.Status == "Active")
+                        {
+                            <span class="badge bg-success-subtle text-success px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-circle-check me-1"></i>Active</span>
+                        }
+                        else
+                        {
+                            <span class="badge bg-danger-subtle text-danger px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-circle-xmark me-1"></i>Inactive</span>
+                        }
+                    </div>
+                </div>
+                <!-- Action Buttons -->
+                <div class="col-md-3 text-center text-md-end">
+                    <a asp-action="Edit" asp-route-id="@Model.VisitorId" class="btn btn-primary px-4 py-2 fw-semibold rounded-2 shadow-sm mb-2 w-100 w-md-auto">
+                        <i class="fa-solid fa-user-pen me-2"></i>Edit Profile
+                    </a>
+                    <a asp-action="Index" class="btn btn-outline-secondary px-4 py-2 rounded-2 w-100 w-md-auto">
+                        Back to List
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabs Section -->
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+            <ul class="nav nav-tabs border-bottom" id="visitorTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active fw-semibold pb-3" id="profile-tab" data-bs-toggle="tab" data-bs-target="#profile-panel" type="button" role="tab" aria-controls="profile-panel" aria-selected="true">
+                        <i class="fa-solid fa-address-card me-2"></i>Profile Details
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-semibold pb-3" id="appointments-tab" data-bs-toggle="tab" data-bs-target="#appointments-panel" type="button" role="tab" aria-controls="appointments-panel" aria-selected="false">
+                        <i class="fa-solid fa-calendar-check me-2"></i>Appointments History <span class="badge bg-secondary rounded-pill ms-1">@ViewBag.AppointmentsCount</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link fw-semibold pb-3" id="visits-tab" data-bs-toggle="tab" data-bs-target="#visits-panel" type="button" role="tab" aria-controls="visits-panel" aria-selected="false">
+                        <i class="fa-solid fa-shoe-prints me-2"></i>Visits History <span class="badge bg-secondary rounded-pill ms-1">@ViewBag.VisitsCount</span>
+                    </button>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="card-body p-4">
+            <div class="tab-content" id="visitorTabsContent">
+                <!-- Profile details panel -->
+                <div class="tab-pane fade show active" id="profile-panel" role="tabpanel" aria-labelledby="profile-tab">
+                    <div class="row g-4">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold text-muted small uppercase tracking-wider mb-3">Identity & Verification</h6>
+                            <table class="table table-borderless align-middle mb-0">
+                                <tr>
+                                    <td class="text-muted ps-0" style="width: 40%;">ID Proof Type:</td>
+                                    <td class="fw-semibold text-dark">@Model.IdProofType</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted ps-0">ID Proof Number:</td>
+                                    <td class="fw-semibold text-dark">@Model.IdProofNumber</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted ps-0">Company Name:</td>
+                                    <td class="fw-semibold text-dark">@(string.IsNullOrEmpty(Model.CompanyName) ? "-" : Model.CompanyName)</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div class="col-md-6">
+                            <h6 class="fw-bold text-muted small uppercase tracking-wider mb-3">Contact & Registration Info</h6>
+                            <table class="table table-borderless align-middle mb-0">
+                                <tr>
+                                    <td class="text-muted ps-0" style="width: 40%;">Mobile Number:</td>
+                                    <td class="fw-semibold text-dark">@Model.MobileNumber</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted ps-0">Email Address:</td>
+                                    <td class="fw-semibold text-dark">@Model.Email</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted ps-0">Registered Date:</td>
+                                    <td class="fw-semibold text-dark">@Model.CreatedDate.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")</td>
+                                </tr>
+                                <tr>
+                                    <td class="text-muted ps-0">Last Updated:</td>
+                                    <td class="fw-semibold text-dark">@(Model.LastUpdatedDate.HasValue ? Model.LastUpdatedDate.Value.ToLocalTime().ToString("dd MMM yyyy hh:mm tt") : "-")</td>
+                                </tr>
+                            </table>
+                        </div>
+
+                        <div class="col-12 mt-4">
+                            <h6 class="fw-bold text-muted small uppercase tracking-wider mb-3">Address Information</h6>
+                            <div class="p-3 bg-light rounded-3">
+                                <div class="row">
+                                    <div class="col-md-6 mb-2 mb-md-0">
+                                        <span class="text-muted d-block small">Street Address</span>
+                                        <span class="fw-semibold text-dark">@(string.IsNullOrEmpty(Model.Address) ? "-" : Model.Address)</span>
+                                    </div>
+                                    <div class="col-md-3 mb-2 mb-md-0">
+                                        <span class="text-muted d-block small">City</span>
+                                        <span class="fw-semibold text-dark">@(string.IsNullOrEmpty(Model.City) ? "-" : Model.City)</span>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <span class="text-muted d-block small">State</span>
+                                        <span class="fw-semibold text-dark">@(string.IsNullOrEmpty(Model.State) ? "-" : Model.State)</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Appointment history placeholder panel -->
+                <div class="tab-pane fade" id="appointments-panel" role="tabpanel" aria-labelledby="appointments-tab">
+                    <div class="text-center py-5">
+                        <i class="fa-regular fa-calendar-check fa-4x text-muted mb-3"></i>
+                        <h5 class="fw-bold text-dark">No Appointments Found</h5>
+                        <p class="text-muted max-width-md mx-auto mb-0">Previous appointments and scheduling history for this visitor will appear here once the Appointment Management Module is active.</p>
+                    </div>
+                </div>
+
+                <!-- Visit history placeholder panel -->
+                <div class="tab-pane fade" id="visits-panel" role="tabpanel" aria-labelledby="visits-tab">
+                    <div class="text-center py-5">
+                        <i class="fa-solid fa-shoe-prints fa-4x text-muted mb-3"></i>
+                        <h5 class="fw-bold text-dark">No Visit Entries Found</h5>
+                        <p class="text-muted max-width-md mx-auto mb-0">Previous entry logs, gate passes, and check-in history for this visitor will appear here once the Entry Management Module is active.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-success-subtle { background-color: rgba(25, 135, 84, 0.1) !important; }
+    .bg-danger-subtle { background-color: rgba(220, 53, 69, 0.1) !important; }
+    .bg-secondary-subtle { background-color: rgba(108, 117, 125, 0.1) !important; }
+    .bg-primary-subtle { background-color: rgba(30, 60, 114, 0.1) !important; }
+    .text-primary { color: #1e3c72 !important; }
+    .fs-8 { font-size: 0.75rem; }
+    .nav-tabs .nav-link {
+        border: none;
+        color: #6c757d;
+        border-bottom: 3px solid transparent;
+    }
+    .nav-tabs .nav-link.active {
+        border: none;
+        color: #1e3c72;
+        border-bottom: 3px solid #1e3c72;
+    }
+    .max-width-md {
+        max-width: 500px;
+    }
+</style>

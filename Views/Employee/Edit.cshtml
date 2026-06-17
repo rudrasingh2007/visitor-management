@@ -1,0 +1,133 @@
+@model VisitorManagementSystem.ViewModels.EmployeeViewModel
+@{
+    ViewData["Title"] = "Edit Employee";
+}
+
+<div class="container-fluid px-4 py-4">
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0 bg-transparent p-0">
+            <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index" class="text-decoration-none"><i class="fa-solid fa-house me-1"></i>Home</a></li>
+            <li class="breadcrumb-item"><a asp-action="Index" class="text-decoration-none">Employee List</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Edit Employee</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="mb-4">
+        <h3 class="fw-bold text-dark mb-1"><i class="fa-solid fa-user-pen me-2 text-primary"></i>Edit Employee</h3>
+        <p class="text-muted mb-0">Modify information for an existing system employee.</p>
+    </div>
+
+    <div class="row">
+        <div class="col-12 col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <form asp-action="Edit" method="post" autocomplete="off">
+                        @Html.AntiForgeryToken()
+                        
+                        <input type="hidden" asp-for="EmployeeId" />
+
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3 small"></div>
+
+                        <div class="row">
+                            <!-- Employee Code -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="EmployeeCode" class="form-label fw-semibold text-dark">Employee Code <span class="text-danger">*</span></label>
+                                <input asp-for="EmployeeCode" class="form-control rounded-2 p-2" placeholder="e.g. EMP001" required />
+                                <span asp-validation-for="EmployeeCode" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Gender -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Gender" class="form-label fw-semibold text-dark">Gender <span class="text-danger">*</span></label>
+                                <select asp-for="Gender" class="form-select rounded-2 p-2" required>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                <span asp-validation-for="Gender" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- First Name -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="FirstName" class="form-label fw-semibold text-dark">First Name <span class="text-danger">*</span></label>
+                                <input asp-for="FirstName" class="form-control rounded-2 p-2" required />
+                                <span asp-validation-for="FirstName" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Last Name -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="LastName" class="form-label fw-semibold text-dark">Last Name</label>
+                                <input asp-for="LastName" class="form-control rounded-2 p-2" />
+                                <span asp-validation-for="LastName" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Department -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="DepartmentId" class="form-label fw-semibold text-dark">Department <span class="text-danger">*</span></label>
+                                <select asp-for="DepartmentId" class="form-select rounded-2 p-2" asp-items="ViewBag.DepartmentsList" required>
+                                    <option value="">-- Select Department --</option>
+                                </select>
+                                <span asp-validation-for="DepartmentId" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Designation -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Designation" class="form-label fw-semibold text-dark">Designation <span class="text-danger">*</span></label>
+                                <input asp-for="Designation" class="form-control rounded-2 p-2" required />
+                                <span asp-validation-for="Designation" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Email -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Email" class="form-label fw-semibold text-dark">Email Address <span class="text-danger">*</span></label>
+                                <input asp-for="Email" type="email" class="form-control rounded-2 p-2" required />
+                                <span asp-validation-for="Email" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Mobile Number -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="MobileNumber" class="form-label fw-semibold text-dark">Mobile Number <span class="text-danger">*</span></label>
+                                <input asp-for="MobileNumber" class="form-control rounded-2 p-2" required />
+                                <span asp-validation-for="MobileNumber" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Status Dropdown -->
+                            <div class="col-md-6 mb-4">
+                                <label asp-for="Status" class="form-label fw-semibold text-dark">Status <span class="text-danger">*</span></label>
+                                <select asp-for="Status" class="form-select rounded-2 p-2" required>
+                                    <option value="Active">Active</option>
+                                    <option value="Inactive">Inactive</option>
+                                </select>
+                                <span asp-validation-for="Status" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold rounded-2 shadow-sm">
+                                <i class="fa-solid fa-save me-2"></i>Update Employee
+                            </button>
+                            <a asp-action="Index" class="btn btn-outline-secondary px-4 py-2 rounded-2">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

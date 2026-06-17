@@ -1,0 +1,213 @@
+@model IEnumerable<VisitorManagementSystem.Models.RoleMaster>
+@{
+    ViewData["Title"] = "Role Rights Management";
+    var roles = ViewBag.Roles as IEnumerable<VisitorManagementSystem.Models.RoleMaster> ?? new List<VisitorManagementSystem.Models.RoleMaster>();
+}
+
+<div class="container-fluid px-4 py-4">
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0 bg-transparent p-0">
+            <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index" class="text-decoration-none"><i class="fa-solid fa-house me-1"></i>Home</a></li>
+            <li class="breadcrumb-item text-muted">User Management</li>
+            <li class="breadcrumb-item active" aria-current="page">Role Rights</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="mb-4">
+        <h3 class="fw-bold text-dark mb-1"><i class="fa-solid fa-user-shield me-2 text-primary"></i>Role Rights Management</h3>
+        <p class="text-muted mb-0">Configure granular module permissions (View, Add, Edit, Delete) for system roles.</p>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fa-solid fa-circle-check me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" onclick="$(this).closest('.alert').remove()"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fa-solid fa-circle-exclamation me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" onclick="$(this).closest('.alert').remove()"></button>
+        </div>
+    }
+
+    <div class="row g-4">
+        <!-- Left Side: Role Selector Card -->
+        <div class="col-12 col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold text-dark mb-3"><i class="fa-solid fa-user-tag text-primary me-2"></i>Select Role</h5>
+                    
+                    <div class="mb-3">
+                        <label class="form-label text-muted small fw-semibold">Role Name</label>
+                        <select id="roleSelect" class="form-select rounded-3">
+                            <option value="">-- Choose a Role --</option>
+                            @foreach (var role in roles)
+                            {
+                                <option value="@role.RoleId">@role.RoleName @(role.Status == "Inactive" ? "(Inactive)" : "")</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div id="roleHint" class="p-3 bg-light rounded-3 small text-muted">
+                        <i class="fa-solid fa-circle-info me-1"></i>Select a role from the dropdown above to load and edit its permissions.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side: Rights Configurator Card -->
+        <div class="col-12 col-lg-9">
+            <form id="rightsForm" method="post" asp-action="SaveRights">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="roleId" id="formRoleId" value="" />
+                
+                <div class="card border-0 shadow-sm rounded-4 d-none" id="rightsCard">
+                    <div class="card-header bg-white border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center flex-wrap gap-2">
+                        <div>
+                            <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-shield-halved text-primary me-2"></i>Permission Matrix</h5>
+                            <p class="text-muted small mb-0">Customize what modules this role can access.</p>
+                        </div>
+                        <div id="adminNotice" class="d-none">
+                            <span class="badge bg-info-subtle text-info px-3 py-2 rounded-pill"><i class="fa-solid fa-info-circle me-1"></i>Admin role has full access</span>
+                        </div>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0" id="rightsTable">
+                                <thead class="table-light text-muted uppercase fs-8 fw-semibold">
+                                    <tr>
+                                        <th style="width: 40%;">Module Name</th>
+                                        <th style="width: 15%;" class="text-center">View</th>
+                                        <th style="width: 15%;" class="text-center">Add</th>
+                                        <th style="width: 15%;" class="text-center">Edit</th>
+                                        <th style="width: 15%;" class="text-center">Delete</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="rightsTableBody">
+                                    <!-- Dynamic rows loaded via JS -->
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="d-flex justify-content-end gap-2 mt-4 pt-3 border-top border-secondary border-opacity-10">
+                            <button type="submit" id="btnSave" class="btn btn-primary px-4 py-2 fw-semibold rounded-2 shadow-sm">
+                                <i class="fa-solid fa-save me-2"></i>Save Permissions
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Dropdown selection change
+            $('#roleSelect').on('change', function() {
+                var roleId = $(this).val();
+                var roleName = $('#roleSelect option:selected').text().split('(')[0].trim();
+
+                if (!roleId) {
+                    $('#rightsCard').addClass('d-none');
+                    $('#roleHint').removeClass('d-none');
+                    return;
+                }
+
+                $('#roleHint').addClass('d-none');
+                $('#formRoleId').val(roleId);
+
+                // Fetch rights via AJAX
+                $.ajax({
+                    url: '@Url.Action("GetRights", "RoleRights")',
+                    type: 'GET',
+                    data: { roleId: roleId },
+                    success: function(data) {
+                        $('#rightsTableBody').empty();
+                        
+                        var isAdmin = roleName.toLowerCase() === 'admin';
+                        if (isAdmin) {
+                            $('#adminNotice').removeClass('d-none');
+                            $('#btnSave').addClass('d-none');
+                        } else {
+                            $('#adminNotice').addClass('d-none');
+                            $('#btnSave').removeClass('d-none');
+                        }
+
+                        $.each(data, function(index, item) {
+                            var rowHtml = '<tr>' +
+                                '<td class="fw-semibold text-dark">' + item.moduleName + 
+                                    '<input type="hidden" name="rights[' + index + '].ModuleId" value="' + item.moduleId + '" />' +
+                                '</td>' +
+                                '<td class="text-center">' +
+                                    '<input type="checkbox" name="rights[' + index + '].CanView" value="true" class="form-check-input chk-view" ' + 
+                                        (item.canView || isAdmin ? 'checked' : '') + (isAdmin ? ' disabled' : '') + ' />' +
+                                '</td>' +
+                                '<td class="text-center">' +
+                                    '<input type="checkbox" name="rights[' + index + '].CanAdd" value="true" class="form-check-input chk-add" ' + 
+                                        (item.canAdd || isAdmin ? 'checked' : '') + (isAdmin ? ' disabled' : '') + ' />' +
+                                '</td>' +
+                                '<td class="text-center">' +
+                                    '<input type="checkbox" name="rights[' + index + '].CanEdit" value="true" class="form-check-input chk-edit" ' + 
+                                        (item.canEdit || isAdmin ? 'checked' : '') + (isAdmin ? ' disabled' : '') + ' />' +
+                                '</td>' +
+                                '<td class="text-center">' +
+                                    '<input type="checkbox" name="rights[' + index + '].CanDelete" value="true" class="form-check-input chk-delete" ' + 
+                                        (item.canDelete || isAdmin ? 'checked' : '') + (isAdmin ? ' disabled' : '') + ' />' +
+                                '</td>' +
+                                '</tr>';
+                            $('#rightsTableBody').append(rowHtml);
+                        });
+
+                        // Show grid card
+                        $('#rightsCard').removeClass('d-none');
+                    },
+                    error: function() {
+                        alert('Error loading permissions. Please try again.');
+                    }
+                });
+            });
+
+            // Auto-check View if Add, Edit or Delete are checked
+            $(document).on('change', '.chk-add, .chk-edit, .chk-delete', function() {
+                if ($(this).is(':checked')) {
+                    $(this).closest('tr').find('.chk-view').prop('checked', true);
+                }
+            });
+
+            // Auto-uncheck Add, Edit, Delete if View is unchecked
+            $(document).on('change', '.chk-view', function() {
+                if (!$(this).is(':checked')) {
+                    $(this).closest('tr').find('.chk-add, .chk-edit, .chk-delete').prop('checked', false);
+                }
+            });
+            // Handle pre-selected RoleId from query string
+            var preSelectedRoleId = '@ViewBag.SelectedRoleId';
+            if (preSelectedRoleId && preSelectedRoleId !== '') {
+                $('#roleSelect').val(preSelectedRoleId).trigger('change');
+            }
+        });
+    </script>
+}
+
+<style>
+    .bg-info-subtle { background-color: rgba(13, 202, 240, 0.1) !important; }
+    .text-primary { color: #1e3c72 !important; }
+    .fs-8 { font-size: 0.75rem; }
+    .form-check-input {
+        width: 1.25rem;
+        height: 1.25rem;
+        cursor: pointer;
+    }
+    .form-check-input:checked {
+        background-color: #1e3c72;
+        border-color: #1e3c72;
+    }
+</style>

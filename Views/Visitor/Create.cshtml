@@ -1,0 +1,280 @@
+@model VisitorManagementSystem.ViewModels.VisitorViewModel
+@{
+    ViewData["Title"] = "Add Visitor";
+    var defaultPhoto = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23f1f3f5'/><text x='50' y='55' font-size='16' font-family='Segoe UI, Arial' font-weight='bold' fill='%236c757d' text-anchor='middle'>PHOTO</text></svg>";
+}
+
+<div class="container-fluid px-4 py-4">
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0 bg-transparent p-0">
+            <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index" class="text-decoration-none"><i class="fa-solid fa-house me-1"></i>Home</a></li>
+            <li class="breadcrumb-item"><a asp-action="Index" class="text-decoration-none">Visitor List</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Add Visitor</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="mb-4">
+        <h3 class="fw-bold text-dark mb-1"><i class="fa-solid fa-user-plus me-2 text-primary"></i>Add Visitor</h3>
+        <p class="text-muted mb-0">Register a new visitor and upload validation details.</p>
+    </div>
+
+    <div class="row">
+        <div class="col-12 col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <form asp-action="Create" method="post" autocomplete="off">
+                        @Html.AntiForgeryToken()
+                        
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3 small"></div>
+ 
+                        <!-- Photo Capture Row (WebRTC Webcam) -->
+                        <div class="row mb-4">
+                            <div class="col-12 col-md-4 text-center mb-3 mb-md-0">
+                                <div class="camera-container border border-2 rounded-circle bg-light overflow-hidden position-relative shadow-sm mb-2" style="width: 150px; height: 150px; margin: 0 auto;">
+                                    <!-- Live Video Stream -->
+                                    <video id="webcamVideo" autoplay playsinline class="w-100 h-100 d-none" style="object-fit: cover; transform: scaleX(-1);"></video>
+                                    <!-- Captured Photo Preview -->
+                                    <img id="photoPreview" src="@defaultPhoto" class="w-100 h-100" style="object-fit: cover;" alt="Visitor Photo Preview" />
+                                    <!-- Canvas for capturing frame (hidden) -->
+                                    <canvas id="webcamCanvas" class="d-none" width="480" height="480"></canvas>
+                                </div>
+                            </div>
+                            <div class="col-12 col-md-8 d-flex flex-column justify-content-center">
+                                <label class="form-label fw-semibold text-dark mb-2"><i class="fa-solid fa-camera me-1"></i> Visitor Photo <span class="text-muted small">(Optional)</span></label>
+                                <div class="d-flex flex-wrap gap-2 mb-2">
+                                    <button type="button" id="btnStartCamera" class="btn btn-sm btn-outline-primary fw-semibold rounded-2"><i class="fa-solid fa-video me-1"></i> Start Camera</button>
+                                    <button type="button" id="btnCapturePhoto" class="btn btn-sm btn-success fw-semibold rounded-2 d-none"><i class="fa-solid fa-camera me-1"></i> Capture Photo</button>
+                                    <button type="button" id="btnRetakePhoto" class="btn btn-sm btn-outline-warning fw-semibold rounded-2 d-none"><i class="fa-solid fa-arrows-rotate me-1"></i> Retake</button>
+                                    <button type="button" id="btnRemovePhoto" class="btn btn-sm btn-outline-danger fw-semibold rounded-2 d-none"><i class="fa-solid fa-trash-can me-1"></i> Remove Photo</button>
+                                </div>
+                                <div class="form-text text-muted small"><i class="fa-solid fa-info-circle me-1"></i> Use your webcam to capture a live visitor photo.</div>
+                                <input type="hidden" id="photoBase64" name="PhotoBase64" />
+                            </div>
+                        </div>
+
+                        <hr class="text-muted border-secondary opacity-10 mb-4" />
+
+                        <!-- Basic Information -->
+                        <h6 class="fw-bold text-primary mb-3">Basic Details</h6>
+                        <div class="row">
+                            <!-- First Name -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="FirstName" class="form-label fw-semibold text-dark">First Name <span class="text-danger">*</span></label>
+                                <input asp-for="FirstName" class="form-control rounded-2 p-2" placeholder="Enter first name" required />
+                                <span asp-validation-for="FirstName" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Last Name -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="LastName" class="form-label fw-semibold text-dark">Last Name</label>
+                                <input asp-for="LastName" class="form-control rounded-2 p-2" placeholder="Enter last name" />
+                                <span asp-validation-for="LastName" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Gender Dropdown -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Gender" class="form-label fw-semibold text-dark">Gender <span class="text-danger">*</span></label>
+                                <select asp-for="Gender" class="form-select rounded-2 p-2" required>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                <span asp-validation-for="Gender" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Company Name (Optional) -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="CompanyName" class="form-label fw-semibold text-dark">Company Name <span class="text-muted small">(Optional)</span></label>
+                                <input asp-for="CompanyName" class="form-control rounded-2 p-2" placeholder="e.g. Acme Corp" />
+                                <span asp-validation-for="CompanyName" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <hr class="text-muted border-secondary opacity-10 my-4" />
+
+                        <!-- Contact & Verification -->
+                        <h6 class="fw-bold text-primary mb-3">Contact & Verification Details</h6>
+                        <div class="row">
+                            <!-- Mobile Number -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="MobileNumber" class="form-label fw-semibold text-dark">Mobile Number <span class="text-danger">*</span></label>
+                                <input asp-for="MobileNumber" class="form-control rounded-2 p-2" placeholder="Enter mobile number" required />
+                                <span asp-validation-for="MobileNumber" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Email Address -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Email" class="form-label fw-semibold text-dark">Email Address <span class="text-danger">*</span></label>
+                                <input asp-for="Email" type="email" class="form-control rounded-2 p-2" placeholder="e.g. visitor@example.com" required />
+                                <span asp-validation-for="Email" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- ID Proof Type Dropdown -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="IdProofType" class="form-label fw-semibold text-dark">ID Proof Type <span class="text-danger">*</span></label>
+                                <select asp-for="IdProofType" class="form-select rounded-2 p-2" required>
+                                    <option value="Aadhaar Card">Aadhaar Card</option>
+                                    <option value="PAN Card">PAN Card</option>
+                                    <option value="Driving License">Driving License</option>
+                                    <option value="Passport">Passport</option>
+                                    <option value="Voter ID">Voter ID</option>
+                                </select>
+                                <span asp-validation-for="IdProofType" class="text-danger small"></span>
+                            </div>
+
+                            <!-- ID Proof Number -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="IdProofNumber" class="form-label fw-semibold text-dark">ID Proof Number <span class="text-danger">*</span></label>
+                                <input asp-for="IdProofNumber" class="form-control rounded-2 p-2" placeholder="Enter ID number" required />
+                                <span asp-validation-for="IdProofNumber" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Status Dropdown -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Status" class="form-label fw-semibold text-dark">Status <span class="text-danger">*</span></label>
+                                <select asp-for="Status" class="form-select rounded-2 p-2" required>
+                                    <option value="Active">Active</option>
+                                    <option value="Inactive">Inactive</option>
+                                </select>
+                                <span asp-validation-for="Status" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <hr class="text-muted border-secondary opacity-10 my-4" />
+
+                        <!-- Address Info -->
+                        <h6 class="fw-bold text-primary mb-3">Address Information</h6>
+                        <div class="mb-3">
+                            <label asp-for="Address" class="form-label fw-semibold text-dark">Address Details</label>
+                            <input asp-for="Address" class="form-control rounded-2 p-2" placeholder="Street number, building details..." />
+                            <span asp-validation-for="Address" class="text-danger small"></span>
+                        </div>
+
+                        <div class="row">
+                            <!-- City -->
+                            <div class="col-md-6 mb-4">
+                                <label asp-for="City" class="form-label fw-semibold text-dark">City</label>
+                                <input asp-for="City" class="form-control rounded-2 p-2" placeholder="Enter city" />
+                                <span asp-validation-for="City" class="text-danger small"></span>
+                            </div>
+
+                            <!-- State -->
+                            <div class="col-md-6 mb-4">
+                                <label asp-for="State" class="form-label fw-semibold text-dark">State</label>
+                                <input asp-for="State" class="form-control rounded-2 p-2" placeholder="Enter state" />
+                                <span asp-validation-for="State" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold rounded-2 shadow-sm">
+                                <i class="fa-solid fa-save me-2"></i>Save Visitor
+                            </button>
+                            <a asp-action="Index" class="btn btn-outline-secondary px-4 py-2 rounded-2">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        let localStream = null;
+        const video = document.getElementById('webcamVideo');
+        const imgPreview = document.getElementById('photoPreview');
+        const canvas = document.getElementById('webcamCanvas');
+        const hiddenInput = document.getElementById('photoBase64');
+
+        const btnStart = document.getElementById('btnStartCamera');
+        const btnCapture = document.getElementById('btnCapturePhoto');
+        const btnRetake = document.getElementById('btnRetakePhoto');
+        const btnRemove = document.getElementById('btnRemovePhoto');
+
+        async function startCamera() {
+            try {
+                localStream = await navigator.mediaDevices.getUserMedia({
+                    video: { width: 640, height: 480, facingMode: "user" },
+                    audio: false
+                });
+                video.srcObject = localStream;
+                video.classList.remove('d-none');
+                imgPreview.classList.add('d-none');
+
+                btnStart.classList.add('d-none');
+                btnCapture.classList.remove('d-none');
+                btnRetake.classList.add('d-none');
+                btnRemove.classList.add('d-none');
+            } catch (err) {
+                console.error("Camera access error:", err);
+                alert("Could not access camera. Please check camera connections and website permissions.");
+            }
+        }
+
+        function stopCamera() {
+            if (localStream) {
+                localStream.getTracks().forEach(track => track.stop());
+                localStream = null;
+            }
+            video.srcObject = null;
+        }
+
+        function capturePhoto() {
+            const context = canvas.getContext('2d');
+            // Mirror the captured image to match the video element
+            context.translate(canvas.width, 0);
+            context.scale(-1, 1);
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            context.setTransform(1, 0, 0, 1, 0, 0); // Reset
+
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+            hiddenInput.value = dataUrl;
+            imgPreview.src = dataUrl;
+
+            stopCamera();
+            video.classList.add('d-none');
+            imgPreview.classList.remove('d-none');
+
+            btnCapture.classList.add('d-none');
+            btnRetake.classList.remove('d-none');
+            btnRemove.classList.remove('d-none');
+        }
+
+        function retakePhoto() {
+            startCamera();
+        }
+
+        function removePhoto() {
+            stopCamera();
+            hiddenInput.value = '';
+            imgPreview.src = '@defaultPhoto';
+
+            video.classList.add('d-none');
+            imgPreview.classList.remove('d-none');
+
+            btnStart.classList.remove('d-none');
+            btnCapture.classList.add('d-none');
+            btnRetake.classList.add('d-none');
+            btnRemove.classList.add('d-none');
+        }
+
+        btnStart.addEventListener('click', startCamera);
+        btnCapture.addEventListener('click', capturePhoto);
+        btnRetake.addEventListener('click', retakePhoto);
+        btnRemove.addEventListener('click', removePhoto);
+    </script>
+}

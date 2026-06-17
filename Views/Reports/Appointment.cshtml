@@ -1,0 +1,316 @@
+@model VisitorManagementSystem.ViewModels.AppointmentReportViewModel
+@{
+    ViewData["Title"] = "Appointment Report";
+}
+
+<div class="container-fluid px-4 py-4">
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0 bg-transparent p-0">
+            <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index" class="text-decoration-none"><i class="fa-solid fa-house me-1"></i>Home</a></li>
+            <li class="breadcrumb-item text-muted">Reports & History</li>
+            <li class="breadcrumb-item active" aria-current="page">Appointment Report</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="mb-4">
+        <h3 class="fw-bold text-dark mb-1"><i class="fa-solid fa-calendar-check me-2 text-success"></i>Appointment Reports</h3>
+        <p class="text-muted mb-0">Track reservation ratios, pending counts, cancellations, and completed visits.</p>
+    </div>
+
+    <!-- KPI Metrics row -->
+    <div class="row g-3 mb-4">
+        <!-- Total -->
+        <div class="col-6 col-sm-4 col-md-2">
+            <div class="card border-0 shadow-sm rounded-4 bg-primary text-white h-100">
+                <div class="card-body p-3 text-center">
+                    <span class="fs-8 text-white-50 text-uppercase fw-bold d-block mb-1">Total</span>
+                    <h3 class="fw-bold mb-0">@Model.TotalAppointments</h3>
+                </div>
+            </div>
+        </div>
+        <!-- Pending -->
+        <div class="col-6 col-sm-4 col-md-2">
+            <div class="card border-0 shadow-sm rounded-4 bg-warning text-dark h-100">
+                <div class="card-body p-3 text-center">
+                    <span class="fs-8 text-dark-50 text-uppercase fw-bold d-block mb-1">Pending</span>
+                    <h3 class="fw-bold mb-0">@Model.PendingAppointments</h3>
+                </div>
+            </div>
+        </div>
+        <!-- Approved -->
+        <div class="col-6 col-sm-4 col-md-2">
+            <div class="card border-0 shadow-sm rounded-4 bg-success text-white h-100">
+                <div class="card-body p-3 text-center">
+                    <span class="fs-8 text-white-50 text-uppercase fw-bold d-block mb-1">Approved</span>
+                    <h3 class="fw-bold mb-0">@Model.ApprovedAppointments</h3>
+                </div>
+            </div>
+        </div>
+        <!-- Rejected -->
+        <div class="col-6 col-sm-4 col-md-2">
+            <div class="card border-0 shadow-sm rounded-4 bg-danger text-white h-100">
+                <div class="card-body p-3 text-center">
+                    <span class="fs-8 text-white-50 text-uppercase fw-bold d-block mb-1">Rejected</span>
+                    <h3 class="fw-bold mb-0">@Model.RejectedAppointments</h3>
+                </div>
+            </div>
+        </div>
+        <!-- Cancelled -->
+        <div class="col-6 col-sm-4 col-md-2">
+            <div class="card border-0 shadow-sm rounded-4 bg-secondary text-white h-100">
+                <div class="card-body p-3 text-center">
+                    <span class="fs-8 text-white-50 text-uppercase fw-bold d-block mb-1">Cancelled</span>
+                    <h3 class="fw-bold mb-0">@Model.CancelledAppointments</h3>
+                </div>
+            </div>
+        </div>
+        <!-- Completed -->
+        <div class="col-6 col-sm-4 col-md-2">
+            <div class="card border-0 shadow-sm rounded-4 bg-info text-white h-100">
+                <div class="card-body p-3 text-center">
+                    <span class="fs-8 text-white-50 text-uppercase fw-bold d-block mb-1">Completed</span>
+                    <h3 class="fw-bold mb-0">@Model.CompletedAppointments</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters Card -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-sliders text-primary me-2"></i>Filter Report Data</h6>
+            <div class="row g-3">
+                <!-- Status Filter -->
+                <div class="col-12 col-sm-6 col-md-3 col-lg-2">
+                    <label class="form-label fw-semibold text-muted small mb-1">Status</label>
+                    <select id="statusFilter" class="form-select rounded-2">
+                        <option value="">All Statuses</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Rejected">Rejected</option>
+                        <option value="Cancelled">Cancelled</option>
+                        <option value="Completed">Completed</option>
+                    </select>
+                </div>
+                <!-- Department Filter -->
+                <div class="col-12 col-sm-6 col-md-3 col-lg-2">
+                    <label class="form-label fw-semibold text-muted small mb-1">Department</label>
+                    <select id="deptFilter" class="form-select rounded-2" asp-items="ViewBag.DepartmentsList">
+                        <option value="">All Departments</option>
+                    </select>
+                </div>
+                <!-- Visitor Filter -->
+                <div class="col-12 col-sm-6 col-md-3 col-lg-2">
+                    <label class="form-label fw-semibold text-muted small mb-1">Visitor</label>
+                    <select id="visitorFilter" class="form-select rounded-2" asp-items="ViewBag.VisitorsList">
+                        <option value="">All Visitors</option>
+                    </select>
+                </div>
+                <!-- Employee Filter -->
+                <div class="col-12 col-sm-6 col-md-3 col-lg-2">
+                    <label class="form-label fw-semibold text-muted small mb-1">Employee Host</label>
+                    <select id="employeeFilter" class="form-select rounded-2" asp-items="ViewBag.EmployeesList">
+                        <option value="">All Employees</option>
+                    </select>
+                </div>
+                <!-- Date Range -->
+                <div class="col-12 col-sm-6 col-md-3 col-lg-2">
+                    <label class="form-label fw-semibold text-muted small mb-1">Start Date</label>
+                    <input type="date" id="startDateFilter" class="form-control rounded-2" />
+                </div>
+                <div class="col-12 col-sm-6 col-md-3 col-lg-2">
+                    <label class="form-label fw-semibold text-muted small mb-1">End Date</label>
+                    <input type="date" id="endDateFilter" class="form-control rounded-2" />
+                </div>
+            </div>
+            <!-- Reset Button -->
+            <div class="d-flex justify-content-end mt-3">
+                <button type="button" id="btnResetFilters" class="btn btn-sm btn-outline-secondary rounded-2">
+                    <i class="fa-solid fa-arrow-rotate-left me-1"></i>Reset Filters
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Card -->
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" id="appointmentReportTable" style="width:100%;">
+                    <thead class="table-light text-muted uppercase fs-7 fw-semibold">
+                        <tr>
+                            <th>Visitor Name</th>
+                            <th>Department</th>
+                            <th>Employee Host</th>
+                            <th>Appt Date</th>
+                            <th>Time</th>
+                            <th>Status</th>
+                            <th>Purpose</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Appointments)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@(item.Visitor != null ? $"{item.Visitor.FirstName} {item.Visitor.LastName}" : "Unknown")</td>
+                                <td><span class="badge bg-secondary-subtle text-secondary px-2 py-1 fs-8">@(item.Department?.DepartmentName ?? "N/A")</span></td>
+                                <td>@(item.Employee != null ? $"{item.Employee.FirstName} {item.Employee.LastName}" : "Unknown")</td>
+                                <td class="appt-date" data-date="@item.AppointmentDate.ToString("yyyy-MM-dd")" data-order="@item.AppointmentDate.ToString("yyyyMMdd")">
+                                    @item.AppointmentDate.ToString("dd MMM yyyy")
+                                </td>
+                                <td>@item.AppointmentTime.ToString(@"hh\:mm")</td>
+                                <td>
+                                    @if (item.Status == "Pending")
+                                    {
+                                        <span class="badge bg-warning-subtle text-warning px-3 py-2 fs-8 rounded-pill"><i class="fa-regular fa-clock me-1"></i>Pending</span>
+                                    }
+                                    else if (item.Status == "Approved")
+                                    {
+                                        <span class="badge bg-success-subtle text-success px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-circle-check me-1"></i>Approved</span>
+                                    }
+                                    else if (item.Status == "Rejected")
+                                    {
+                                        <span class="badge bg-danger-subtle text-danger px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-circle-xmark me-1"></i>Rejected</span>
+                                    }
+                                    else if (item.Status == "Cancelled")
+                                    {
+                                        <span class="badge bg-secondary-subtle text-secondary px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-ban me-1"></i>Cancelled</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-primary-subtle text-primary px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-check-double me-1"></i>Completed</span>
+                                    }
+                                </td>
+                                <td class="text-truncate" style="max-width: 150px;" title="@item.Purpose">@item.Purpose</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Initialize DataTable
+            var table = $('#appointmentReportTable').DataTable({
+                "paging": true,
+                "lengthChange": true,
+                "searching": true,
+                "ordering": true,
+                "info": true,
+                "autoWidth": false,
+                "responsive": true,
+                "language": {
+                    "search": "_INPUT_",
+                    "searchPlaceholder": "Search report..."
+                },
+                "order": [[3, "desc"], [4, "desc"]], // Default order by Appt Date desc
+                "buttons": [
+                    {
+                        extend: 'excel',
+                        className: 'btn btn-sm btn-outline-success me-1 rounded-2',
+                        text: '<i class="fa-solid fa-file-excel me-1"></i> Excel',
+                        exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6] }
+                    },
+                    {
+                        extend: 'pdf',
+                        className: 'btn btn-sm btn-outline-danger me-1 rounded-2',
+                        text: '<i class="fa-solid fa-file-pdf me-1"></i> PDF',
+                        exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6] }
+                    },
+                    {
+                        extend: 'print',
+                        className: 'btn btn-sm btn-outline-secondary rounded-2',
+                        text: '<i class="fa-solid fa-print me-1"></i> Print Report',
+                        exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6] }
+                    }
+                ],
+                "dom": "<'row mb-3'<'col-sm-12 col-md-6'lB><'col-sm-12 col-md-6'f>>" +
+                       "<'row'<'col-sm-12'tr>>" +
+                       "<'row mt-3'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>"
+            });
+
+            // Status Filter Dropdown
+            $('#statusFilter').on('change', function() {
+                var val = $(this).val();
+                table.column(5).search(val ? '^\\s*' + val + '\\s*$' : '', true, false).draw();
+            });
+
+            // Department Filter Dropdown
+            $('#deptFilter').on('change', function() {
+                var val = $(this).val();
+                table.column(1).search(val ? '^\\s*' + val + '\\s*$' : '', true, false).draw();
+            });
+
+            // Visitor Filter Dropdown
+            $('#visitorFilter').on('change', function() {
+                var val = $(this).val();
+                table.column(0).search(val ? '^\\s*' + val + '\\s*$' : '', true, false).draw();
+            });
+
+            // Employee Filter Dropdown
+            $('#employeeFilter').on('change', function() {
+                var val = $(this).val();
+                table.column(2).search(val ? '^\\s*' + val + '\\s*$' : '', true, false).draw();
+            });
+
+            // Custom Date Range filter
+            $.fn.dataTable.ext.search.push(
+                function(settings, data, dataIndex) {
+                    var startDateStr = $('#startDateFilter').val(); // YYYY-MM-DD
+                    var endDateStr = $('#endDateFilter').val(); // YYYY-MM-DD
+                    
+                    var rowDateStr = $(table.row(dataIndex).node()).find('td.appt-date').attr('data-date');
+                    if (!rowDateStr) return true;
+                    
+                    var rowDate = new Date(rowDateStr);
+                    rowDate.setHours(0,0,0,0);
+
+                    if (startDateStr) {
+                        var startDate = new Date(startDateStr);
+                        startDate.setHours(0,0,0,0);
+                        if (rowDate < startDate) return false;
+                    }
+                    if (endDateStr) {
+                        var endDate = new Date(endDateStr);
+                        endDate.setHours(0,0,0,0);
+                        if (rowDate > endDate) return false;
+                    }
+                    return true;
+                }
+            );
+
+            // Re-draw when dates change
+            $('#startDateFilter, #endDateFilter').on('change', function() {
+                table.draw();
+            });
+
+            // Reset Filters
+            $('#btnResetFilters').click(function() {
+                $('#statusFilter').val('');
+                $('#deptFilter').val('');
+                $('#visitorFilter').val('');
+                $('#employeeFilter').val('');
+                $('#startDateFilter').val('');
+                $('#endDateFilter').val('');
+                
+                table.column(5).search('');
+                table.column(1).search('');
+                table.column(0).search('');
+                table.column(2).search('');
+                table.draw();
+            });
+        });
+    </script>
+}
+
+<style>
+    .fs-7 { font-size: 0.85rem; }
+    .fs-8 { font-size: 0.75rem; }
+    .text-dark-50 { color: rgba(33, 37, 41, 0.6) !important; }
+</style>

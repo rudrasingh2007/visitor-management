@@ -1,0 +1,51 @@
+@{
+    ViewData["Title"] = "Access Denied";
+}
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-12 col-md-8 col-lg-6">
+            <div class="card border-0 shadow-lg rounded-4 overflow-hidden mt-5">
+                <!-- Red Alert Banner -->
+                <div class="bg-danger text-white text-center py-5">
+                    <div class="mb-3">
+                        <i class="fa-solid fa-triangle-exclamation fa-5x animate-bounce"></i>
+                    </div>
+                    <h2 class="fw-bold mb-0">Access Denied</h2>
+                    <span class="badge bg-white-50 text-dark px-3 py-1.5 rounded-pill fs-8 mt-2">HTTP 403 - Forbidden</span>
+                </div>
+                
+                <div class="card-body p-5 text-center">
+                    <h5 class="fw-bold text-dark mb-3">Insufficient Permissions</h5>
+                    <p class="text-muted mb-4 fs-6">
+                        You do not have permission to access this page. Please contact your system administrator if you believe this is an error.
+                    </p>
+                    
+                    <div class="d-grid gap-2 col-8 mx-auto">
+                        <a href="/" class="btn btn-outline-danger py-2.5 rounded-3 fw-semibold shadow-sm">
+                            <i class="fa-solid fa-house me-2"></i>Return to Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-white-50 {
+        background-color: rgba(255, 255, 255, 0.2) !important;
+        color: #fff !important;
+    }
+    .animate-bounce {
+        animation: bounce 2s infinite;
+    }
+    @@keyframes bounce {
+        0%, 100% {
+            transform: translateY(0);
+        }
+        50% {
+            transform: translateY(-10px);
+        }
+    }
+</style>

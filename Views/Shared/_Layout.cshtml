@@ -1,0 +1,522 @@
+@using VisitorManagementSystem.Helpers
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor HttpContextAccessor
+@{
+    var fullName = HttpContextAccessor.HttpContext?.Session.GetString("FullName") ?? "Guest User";
+    var roleName = HttpContextAccessor.HttpContext?.Session.GetString("RoleName") ?? "Guest";
+    
+    var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
+    var isUserMgmtOpen = currentController == "User" || currentController == "Role" || currentController == "RoleRights";
+    var isVisitorMgmtOpen = currentController == "Visitor";
+    var isOrgMgmtOpen = currentController == "Department" || currentController == "Employee";
+    var isAppointmentMgmtOpen = currentController == "Appointment";
+    var isVisitMgmtOpen = currentController == "Visit";
+    var isGatePassMgmtOpen = currentController == "GatePass";
+    var isReportsOpen = currentController == "Reports" || currentController == "VisitorHistory";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Visitor Management System</title>
+    
+    <!-- Bootstrap & FontAwesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    
+    <!-- DataTables CSS & Buttons Extension -->
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/dataTables.bootstrap5.min.css" />
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.2/css/buttons.bootstrap5.min.css" />
+    
+    <!-- Custom Sidebar Admin Styles -->
+    <style>
+        :root {
+            --sidebar-bg: #1e3c72;
+            --sidebar-bg-gradient: #2a5298;
+            --sidebar-width: 260px;
+            --navbar-height: 60px;
+            --body-bg: #f4f6f9;
+        }
+
+        body {
+            background-color: var(--body-bg);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
+        }
+
+        /* Sidebar styling */
+        #sidebar-wrapper {
+            height: 100vh;
+            width: var(--sidebar-width);
+            background: linear-gradient(180deg, var(--sidebar-bg) 0%, var(--sidebar-bg-gradient) 100%);
+            color: rgba(255, 255, 255, 0.8);
+            position: fixed;
+            left: 0;
+            top: 0;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            box-shadow: 4px 0 10px rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Sidebar scrollable container */
+        .sidebar {
+            flex-grow: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            scroll-behavior: smooth;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.2) rgba(0, 0, 0, 0.1);
+        }
+
+        /* Custom Scrollbar Styles for WebKit browsers */
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+        }
+
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.35);
+        }
+
+        /* Submenu Chevron transition */
+        .submenu-arrow {
+            transition: transform 0.25s ease;
+            font-size: 0.8rem;
+        }
+
+        .list-group-item:not(.collapsed) .submenu-arrow {
+            transform: rotate(180deg);
+        }
+
+        #sidebar-wrapper .sidebar-heading {
+            height: var(--navbar-height);
+            display: flex;
+            align-items: center;
+            padding: 0 1.5rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        #sidebar-wrapper .list-group-item {
+            background-color: transparent;
+            color: rgba(255, 255, 255, 0.75);
+            border: none;
+            padding: 0.8rem 1.5rem;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+        }
+
+        #sidebar-wrapper .list-group-item:hover, 
+        #sidebar-wrapper .list-group-item.active-nav {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border-left: 4px solid #fff;
+        }
+
+        #sidebar-wrapper .list-group-item i {
+            width: 25px;
+        }
+
+        .submenu {
+            background-color: rgba(0, 0, 0, 0.15);
+            transition: all 0.3s ease;
+        }
+
+        .submenu .list-group-item {
+            padding-left: 2.75rem !important;
+            font-size: 0.9rem !important;
+            border-left: none !important;
+        }
+
+        .submenu .list-group-item:hover,
+        .submenu .list-group-item.active-nav {
+            background-color: rgba(255, 255, 255, 0.08) !important;
+            color: #fff !important;
+            border-left: none !important;
+        }
+
+        /* Page Content wrapper */
+        #page-content-wrapper {
+            margin-left: var(--sidebar-width);
+            width: calc(100% - var(--sidebar-width));
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            transition: all 0.3s ease;
+        }
+
+        /* Top Navbar */
+        .admin-navbar {
+            height: var(--navbar-height);
+            background-color: #fff;
+            border-bottom: 1px solid #e3e6f0;
+            padding: 0 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .user-profile-nav {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .user-profile-nav img {
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        /* Content Area */
+        .main-content {
+            flex-grow: 1;
+            background-color: var(--body-bg);
+        }
+
+        footer {
+            background-color: #fff;
+            border-top: 1px solid #e3e6f0;
+            padding: 1rem 0;
+            font-size: 0.85rem;
+        }
+
+        /* Responsive */
+        @@media (max-width: 768px) {
+            #sidebar-wrapper {
+                margin-left: calc(-1 * var(--sidebar-width));
+            }
+            #page-content-wrapper {
+                margin-left: 0;
+                width: 100%;
+            }
+            #sidebar-wrapper.toggled {
+                margin-left: 0;
+            }
+            #page-content-wrapper.toggled {
+                margin-left: var(--sidebar-width);
+            }
+        }
+
+        /* DataTables Length Menu UI alignment and layout fix */
+        .dataTables_length label {
+            display: inline-flex !important;
+            align-items: center !important;
+            gap: 0.5rem !important;
+            margin-bottom: 0.5rem;
+            font-size: 0.875rem;
+            color: #6c757d;
+        }
+        .dataTables_length select {
+            width: auto !important;
+            display: inline-block !important;
+            padding: 0.25rem 2.25rem 0.25rem 0.75rem !important; /* Standard BS5 select padding */
+            font-size: 0.875rem !important;
+            border-radius: 6px !important;
+            border: 1px solid #ced4da !important;
+            height: calc(1.5em + 0.5rem + 2px) !important; /* Consistent BS5 select height */
+            background-color: #fff !important;
+            vertical-align: middle !important;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="d-flex" id="wrapper">
+        <!-- Sidebar -->
+        <div id="sidebar-wrapper">
+            <div class="sidebar-heading">
+                <h5 class="m-0 text-white fw-bold"><i class="fa-solid fa-id-card-clip me-2"></i>VMS Admin</h5>
+            </div>
+            
+            <!-- User Info Sidebar Panel -->
+            <div class="p-3 text-center border-bottom border-secondary border-opacity-25">
+                <div class="avatar-circle mx-auto mb-2 bg-white text-primary d-flex align-items-center justify-content-center fw-bold fs-4 shadow-sm" style="width:50px; height:50px; border-radius: 50%;">
+                    @fullName.Substring(0, Math.Min(2, fullName.Length)).ToUpper()
+                </div>
+                <div class="fw-bold text-white small">@fullName</div>
+                <div class="text-white-50 small fs-8">@roleName</div>
+            </div>
+
+            <div class="list-group list-group-flush sidebar">
+                <!-- Dashboard -->
+                @if (Context.HasPermission("Dashboard", "View"))
+                {
+                    <a asp-controller="Dashboard" asp-action="Index" class="list-group-item list-group-item-action @(currentController == "Dashboard" ? "active-nav" : "")">
+                        <i class="fa-solid fa-gauge-high"></i>Dashboard
+                    </a>
+                }
+
+                <!-- Entry Requests (Role-based) -->
+                @if (Context.HasPermission("Entry Requests", "View"))
+                {
+                    if (roleName == "Employee")
+                    {
+                        <a asp-controller="EntryRequest" asp-action="Pending" class="list-group-item list-group-item-action @(currentController == "EntryRequest" && ViewContext.RouteData.Values["action"]?.ToString() == "Pending" ? "active-nav" : "")">
+                            <i class="fa-solid fa-hourglass-half"></i>Pending Visitor Requests
+                        </a>
+                        <a asp-controller="EntryRequest" asp-action="History" class="list-group-item list-group-item-action @(currentController == "EntryRequest" && ViewContext.RouteData.Values["action"]?.ToString() == "History" ? "active-nav" : "")">
+                            <i class="fa-solid fa-clock-rotate-left"></i>Approval History
+                        </a>
+                    }
+                    else
+                    {
+                        <a asp-controller="EntryRequest" asp-action="Index" class="list-group-item list-group-item-action @(currentController == "EntryRequest" ? "active-nav" : "")">
+                            <i class="fa-solid fa-list-check"></i>Entry Requests
+                        </a>
+                    }
+                }
+
+                <!-- User Management -->
+                @if ((Context.HasPermission("User Master", "View") || Context.HasPermission("Role Master", "View")) && roleName != "Security Guard" && roleName != "Employee")
+                {
+                    <a href="#userSubmenu" data-bs-toggle="collapse" aria-expanded="@(isUserMgmtOpen ? "true" : "false")" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(isUserMgmtOpen ? "" : "collapsed")">
+                        <span><i class="fa-solid fa-users-gear"></i>User Management</span>
+                        <i class="fa-solid fa-chevron-down submenu-arrow"></i>
+                    </a>
+                    <div class="collapse submenu @(isUserMgmtOpen ? "show" : "")" id="userSubmenu">
+                        @if (Context.HasPermission("User Master", "View"))
+                        {
+                            <a asp-controller="User" asp-action="Index" class="list-group-item list-group-item-action @(currentController == "User" ? "active-nav" : "")">
+                                <i class="fa-solid fa-users"></i>User Master
+                            </a>
+                        }
+                        @if (Context.HasPermission("Role Master", "View"))
+                        {
+                            <a asp-controller="Role" asp-action="Index" class="list-group-item list-group-item-action @(currentController == "Role" ? "active-nav" : "")">
+                                <i class="fa-solid fa-user-shield"></i>Role Master
+                            </a>
+                            <a asp-controller="RoleRights" asp-action="Index" class="list-group-item list-group-item-action @(currentController == "RoleRights" ? "active-nav" : "")">
+                                <i class="fa-solid fa-shield-halved"></i>Role Rights
+                            </a>
+                        }
+                    </div>
+                }
+
+                <!-- Visitor Management -->
+                @if (Context.HasPermission("Visitor Master", "View") && roleName != "Employee" && roleName != "Security Guard")
+                {
+                    <a href="#visitorSubmenu" data-bs-toggle="collapse" aria-expanded="@(isVisitorMgmtOpen ? "true" : "false")" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(isVisitorMgmtOpen ? "" : "collapsed")">
+                        <span><i class="fa-solid fa-id-badge"></i>Visitor Management</span>
+                        <i class="fa-solid fa-chevron-down submenu-arrow"></i>
+                    </a>
+                    <div class="collapse submenu @(isVisitorMgmtOpen ? "show" : "")" id="visitorSubmenu">
+                        <a asp-controller="Visitor" asp-action="Index" class="list-group-item list-group-item-action @(currentController == "Visitor" ? "active-nav" : "")">
+                            <i class="fa-solid fa-address-book"></i>Visitor Master
+                        </a>
+                    </div>
+                }
+
+                <!-- Organization Management -->
+                @if ((Context.HasPermission("Department Master", "View") || Context.HasPermission("Employee Master", "View")) && roleName != "Security Guard" && roleName != "Employee")
+                {
+                    <a href="#orgSubmenu" data-bs-toggle="collapse" aria-expanded="@(isOrgMgmtOpen ? "true" : "false")" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(isOrgMgmtOpen ? "" : "collapsed")">
+                        <span><i class="fa-solid fa-sitemap"></i>Organization Management</span>
+                        <i class="fa-solid fa-chevron-down submenu-arrow"></i>
+                    </a>
+                    <div class="collapse submenu @(isOrgMgmtOpen ? "show" : "")" id="orgSubmenu">
+                        @if (Context.HasPermission("Department Master", "View"))
+                        {
+                            <a asp-controller="Department" asp-action="Index" class="list-group-item list-group-item-action @(currentController == "Department" ? "active-nav" : "")">
+                                <i class="fa-solid fa-folder-open"></i>Department Master
+                            </a>
+                        }
+                        @if (Context.HasPermission("Employee Master", "View"))
+                        {
+                            <a asp-controller="Employee" asp-action="Index" class="list-group-item list-group-item-action @(currentController == "Employee" ? "active-nav" : "")">
+                                <i class="fa-solid fa-user-tie"></i>Employee Master
+                            </a>
+                        }
+                    </div>
+                }
+
+                <!-- Appointment Management -->
+                @if (Context.HasPermission("Appointment Master", "View") && roleName != "Security Guard" && roleName != "Employee")
+                {
+                    <a href="#appointmentSubmenu" data-bs-toggle="collapse" aria-expanded="@(isAppointmentMgmtOpen ? "true" : "false")" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(isAppointmentMgmtOpen ? "" : "collapsed")">
+                        <span><i class="fa-solid fa-calendar-check"></i>Appointment Management</span>
+                        <i class="fa-solid fa-chevron-down submenu-arrow"></i>
+                    </a>
+                    <div class="collapse submenu @(isAppointmentMgmtOpen ? "show" : "")" id="appointmentSubmenu">
+                        <a asp-controller="Appointment" asp-action="Index" class="list-group-item list-group-item-action @(currentController == "Appointment" ? "active-nav" : "")">
+                            <i class="fa-solid fa-calendar-days"></i>Appointment Master
+                        </a>
+                    </div>
+                }
+
+                <!-- Visit Management -->
+                @if (Context.HasPermission("Visit Entry", "View") && roleName != "Employee")
+                {
+                    <a href="#visitSubmenu" data-bs-toggle="collapse" aria-expanded="@(isVisitMgmtOpen ? "true" : "false")" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(isVisitMgmtOpen ? "" : "collapsed")">
+                        <span><i class="fa-solid fa-door-open"></i>Visit Management</span>
+                        <i class="fa-solid fa-chevron-down submenu-arrow"></i>
+                    </a>
+                    <div class="collapse submenu @(isVisitMgmtOpen ? "show" : "")" id="visitSubmenu">
+                        <a asp-controller="Visit" asp-action="CheckIn" class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["action"]?.ToString() == "CheckIn" && currentController == "Visit" ? "active-nav" : "")">
+                            <i class="fa-solid fa-user-check"></i>Visitor Check-In
+                        </a>
+                        <a asp-controller="Visit" asp-action="Index" class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["action"]?.ToString() == "Index" && currentController == "Visit" ? "active-nav" : "")">
+                            <i class="fa-solid fa-list-check"></i>Visit Entry List
+                        </a>
+                    </div>
+                }
+
+                <!-- Gate Pass Management -->
+                @if (Context.HasPermission("Gate Pass", "View") && roleName != "Employee" && roleName != "Security Guard")
+                {
+                    <a href="#gatePassSubmenu" data-bs-toggle="collapse" aria-expanded="@(isGatePassMgmtOpen ? "true" : "false")" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(isGatePassMgmtOpen ? "" : "collapsed")">
+                        <span><i class="fa-solid fa-ticket"></i>Gate Pass Management</span>
+                        <i class="fa-solid fa-chevron-down submenu-arrow"></i>
+                    </a>
+                    <div class="collapse submenu @(isGatePassMgmtOpen ? "show" : "")" id="gatePassSubmenu">
+                        <a asp-controller="GatePass" asp-action="Index" class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["action"]?.ToString() == "Index" && currentController == "GatePass" ? "active-nav" : "")">
+                            <i class="fa-solid fa-list-ul"></i>Gate Pass List
+                        </a>
+                    </div>
+                }
+
+                <!-- Reports & History -->
+                @if (Context.HasPermission("Reports", "View") && roleName != "Employee")
+                {
+                    <a href="#reportsSubmenu" data-bs-toggle="collapse" aria-expanded="@(isReportsOpen ? "true" : "false")" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(isReportsOpen ? "" : "collapsed")">
+                        <span><i class="fa-solid fa-chart-pie me-2"></i>Reports & History</span>
+                        <i class="fa-solid fa-chevron-down submenu-arrow"></i>
+                    </a>
+                    <div class="collapse submenu @(isReportsOpen ? "show" : "")" id="reportsSubmenu">
+                        <a asp-controller="VisitorHistory" asp-action="Index" class="list-group-item list-group-item-action @(currentController == "VisitorHistory" ? "active-nav" : "")">
+                            <i class="fa-solid fa-clock-rotate-left"></i>Visitor History
+                        </a>
+                        <a asp-controller="Reports" asp-action="Visitor" class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["action"]?.ToString() == "Visitor" && currentController == "Reports" ? "active-nav" : "")">
+                            <i class="fa-solid fa-users"></i>Visitor Reports
+                        </a>
+                        <a asp-controller="Reports" asp-action="Appointment" class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["action"]?.ToString() == "Appointment" && currentController == "Reports" ? "active-nav" : "")">
+                            <i class="fa-solid fa-calendar-check"></i>Appointment Reports
+                        </a>
+                        <a asp-controller="Reports" asp-action="Visit" class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["action"]?.ToString() == "Visit" && currentController == "Reports" ? "active-nav" : "")">
+                            <i class="fa-solid fa-door-open"></i>Visit Reports
+                        </a>
+                        <a asp-controller="Reports" asp-action="GatePass" class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["action"]?.ToString() == "GatePass" && currentController == "Reports" ? "active-nav" : "")">
+                            <i class="fa-solid fa-ticket"></i>Gate Pass Reports
+                        </a>
+                    </div>
+                }
+                <!-- Divider -->
+                <div class="border-top border-secondary border-opacity-25 my-2"></div>
+
+                <!-- Logout -->
+                <a asp-controller="Account" asp-action="Logout" class="list-group-item list-group-item-action text-danger fw-semibold">
+                    <i class="fa-solid fa-right-from-bracket"></i>Logout
+                </a>
+            </div>
+        </div>
+
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+            <!-- Navbar -->
+            <nav class="navbar admin-navbar navbar-light bg-white shadow-sm px-4">
+                <button class="btn btn-outline-secondary border-0 btn-sm" id="menu-toggle">
+                    <i class="fa-solid fa-bars fa-lg"></i>
+                </button>
+
+                <div class="d-flex align-items-center">
+                    <div class="dropdown">
+                        <div class="user-profile-nav dropdown-toggle" id="dropdownUser" data-bs-toggle="dropdown" aria-expanded="false">
+                            <div class="avatar-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold me-2 shadow-sm" style="width:35px; height:35px; border-radius: 50%; font-size:0.85rem;">
+                                @fullName.Substring(0, Math.Min(2, fullName.Length)).ToUpper()
+                            </div>
+                            <span class="d-none d-md-inline text-dark fw-semibold">@fullName</span>
+                        </div>
+                        <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2" aria-labelledby="dropdownUser">
+                            <li class="dropdown-header text-center">
+                                <h6 class="m-0 fw-bold">@fullName</h6>
+                                <span class="small text-muted">@roleName</span>
+                            </li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-danger" asp-controller="Account" asp-action="Logout">
+                                    <i class="fa-solid fa-right-from-bracket me-2"></i>Logout
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Main Body -->
+            <div class="main-content">
+                @RenderBody()
+            </div>
+
+            <!-- Footer -->
+            <footer class="text-center text-muted border-top">
+                <div class="container-fluid">
+                    <span>&copy; @DateTime.Now.Year - Visitor Management System (User Management Module)</span>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- DataTables JS & Buttons Extensions -->
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/1.13.6/js/dataTables.bootstrap5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.bootstrap5.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/pdfmake.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.2.7/vfs_fonts.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.2/js/buttons.print.min.js"></script>
+
+    <!-- Global Toggle & Form Spinner script -->
+    <script>
+        $(document).ready(function() {
+            // Sidebar menu toggle
+            $("#menu-toggle").click(function(e) {
+                e.preventDefault();
+                $("#wrapper").toggleClass("toggled");
+                $("#sidebar-wrapper").toggleClass("toggled");
+                $("#page-content-wrapper").toggleClass("toggled");
+            });
+
+            // Auto-disable button and show loading spinner during form submission
+            $(document).on('submit', 'form', function(e) {
+                var $form = $(this);
+                
+                // If the form has jQuery validation, verify it is valid
+                if ($form.data('validator') && !$form.valid()) {
+                    return;
+                }
+                
+                // Do not disable on toggle status forms to keep interaction instant
+                if ($form.find('.btn-toggle-status').length) {
+                    return;
+                }
+
+                var $submitBtn = $form.find('button[type="submit"]');
+                if ($submitBtn.length) {
+                    // Slight delay to prevent some browsers from dropping submit on disable
+                    setTimeout(function() {
+                        $submitBtn.prop('disabled', true);
+                        $submitBtn.html('<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Processing...');
+                    }, 50);
+                }
+            });
+        });
+    </script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

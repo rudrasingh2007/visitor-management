@@ -1,0 +1,259 @@
+@model IEnumerable<VisitorManagementSystem.Models.EmployeeMaster>
+@{
+    ViewData["Title"] = "Employee List";
+}
+
+<div class="container-fluid px-4 py-4">
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0 bg-transparent p-0">
+            <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index" class="text-decoration-none"><i class="fa-solid fa-house me-1"></i>Home</a></li>
+            <li class="breadcrumb-item text-muted">Employee Management</li>
+            <li class="breadcrumb-item active" aria-current="page">Employee List</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap">
+        <div>
+            <h3 class="fw-bold text-dark mb-1"><i class="fa-solid fa-user-tie me-2 text-primary"></i>Employee Master</h3>
+            <p class="text-muted mb-0">Manage system employees, contact information, departments, and designations.</p>
+        </div>
+        <div>
+            <a asp-action="Create" class="btn btn-primary px-4 py-2 fw-semibold shadow-sm">
+                <i class="fa-solid fa-plus me-2"></i>Add New Employee
+            </a>
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fa-solid fa-circle-check me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" onclick="$(this).closest('.alert').remove()"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fa-solid fa-circle-exclamation me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" onclick="$(this).closest('.alert').remove()"></button>
+        </div>
+    }
+
+    <!-- Custom Filters Card -->
+    <div class="card border-0 shadow-sm rounded-4 mb-3">
+        <div class="card-body p-3">
+            <div class="row g-3 align-items-center">
+                <!-- Status Filter -->
+                <div class="col-12 col-md-3">
+                    <label class="form-label fw-semibold text-muted small mb-1">Status Filter</label>
+                    <select id="statusFilter" class="form-select rounded-2">
+                        <option value="">All Statuses</option>
+                        <option value="Active">Active</option>
+                        <option value="Inactive">Inactive</option>
+                    </select>
+                </div>
+                <!-- Department Filter -->
+                <div class="col-12 col-md-3">
+                    <label class="form-label fw-semibold text-muted small mb-1">Department Filter</label>
+                    <select id="deptFilter" class="form-select rounded-2" asp-items="ViewBag.DepartmentsList">
+                        <option value="">All Departments</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Card -->
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" id="employeesTable" style="width: 100%;">
+                    <thead class="table-light text-muted uppercase fs-7 fw-semibold">
+                        <tr>
+                            <th>Employee Code</th>
+                            <th>Full Name</th>
+                            <th>Gender</th>
+                            <th>Department</th>
+                            <th>Designation</th>
+                            <th>Email</th>
+                            <th>Mobile</th>
+                            <th>Status</th>
+                            <th class="text-end" style="min-width: 140px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="fw-bold text-dark">@item.EmployeeCode</td>
+                                <td>@item.FirstName @item.LastName</td>
+                                <td>@item.Gender</td>
+                                <td><span class="badge bg-secondary-subtle text-secondary px-2 py-1 fs-8">@(item.Department?.DepartmentName ?? "No Dept")</span></td>
+                                <td>@item.Designation</td>
+                                <td>@item.Email</td>
+                                <td>@item.MobileNumber</td>
+                                <td>
+                                    <!-- Toggle Status Button -->
+                                    <form asp-action="ToggleStatus" asp-route-id="@item.EmployeeId" method="post" style="display:inline;">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit" class="border-0 bg-transparent p-0 btn-toggle-status" title="Click to Toggle Status">
+                                            @if (item.Status == "Active")
+                                            {
+                                                <span class="badge bg-success-subtle text-success px-3 py-2 fs-8 rounded-pill cursor-pointer"><i class="fa-solid fa-circle-check me-1"></i>Active</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="badge bg-danger-subtle text-danger px-3 py-2 fs-8 rounded-pill cursor-pointer"><i class="fa-solid fa-circle-xmark me-1"></i>Inactive</span>
+                                            }
+                                        </button>
+                                    </form>
+                                </td>
+                                <td class="text-end">
+                                    <!-- View Details -->
+                                    <a asp-action="Details" asp-route-id="@item.EmployeeId" class="btn btn-sm btn-outline-info me-1 rounded-2" title="View Profile">
+                                        <i class="fa-solid fa-circle-info"></i>
+                                    </a>
+                                    <!-- Edit -->
+                                    <a asp-action="Edit" asp-route-id="@item.EmployeeId" class="btn btn-sm btn-outline-primary me-1 rounded-2" title="Edit Employee">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </a>
+                                    <!-- Deactivate -->
+                                    <button type="button" class="btn btn-sm btn-outline-danger rounded-2 btn-delete-employee" 
+                                            data-id="@item.EmployeeId" data-name="@item.FirstName @item.LastName" data-code="@item.EmployeeCode" title="Deactivate Employee">
+                                        <i class="fa-solid fa-user-slash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Confirm Deactivate -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-dark" id="deleteModalLabel">Confirm Deactivation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body py-3">
+                <div class="d-flex align-items-center mb-3 text-danger">
+                    <i class="fa-solid fa-triangle-exclamation fa-2xl me-3"></i>
+                    <div>
+                        <p class="mb-0 fw-bold">Are you sure you want to deactivate this employee?</p>
+                        <p class="mb-0 text-muted small">This action will change the employee status to Inactive.</p>
+                    </div>
+                </div>
+                <div class="p-3 bg-light rounded-3">
+                    <strong class="text-dark">Employee Name: </strong><span id="deleteEmployeeName" class="fw-semibold text-primary"></span><br/>
+                    <strong class="text-dark">Employee Code: </strong><span id="deleteEmployeeCode" class="fw-semibold text-primary"></span>
+                </div>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <form id="deleteForm" method="post" asp-action="Delete">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" name="id" id="deleteEmployeeId" />
+                    <button type="button" class="btn btn-secondary px-3 py-2 rounded-2" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger px-3 py-2 rounded-2 fw-semibold">Deactivate Employee</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Initialize DataTable
+            var table = $('#employeesTable').DataTable({
+                "paging": true,
+                "lengthChange": true,
+                "searching": true,
+                "ordering": true,
+                "info": true,
+                "autoWidth": false,
+                "responsive": true,
+                "language": {
+                    "search": "_INPUT_",
+                    "searchPlaceholder": "Search employees..."
+                },
+                "buttons": [
+                    {
+                        extend: 'excel',
+                        className: 'btn btn-sm btn-outline-success me-1 rounded-2',
+                        text: '<i class="fa-solid fa-file-excel me-1"></i> Excel',
+                        exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7] }
+                    },
+                    {
+                        extend: 'pdf',
+                        className: 'btn btn-sm btn-outline-danger me-1 rounded-2',
+                        text: '<i class="fa-solid fa-file-pdf me-1"></i> PDF',
+                        exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7] }
+                    },
+                    {
+                        extend: 'print',
+                        className: 'btn btn-sm btn-outline-secondary rounded-2',
+                        text: '<i class="fa-solid fa-print me-1"></i> Print',
+                        exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6, 7] }
+                    }
+                ],
+                "dom": "<'row mb-3'<'col-sm-12 col-md-6'lB><'col-sm-12 col-md-6'f>>" +
+                       "<'row'<'col-sm-12'tr>>" +
+                       "<'row mt-3'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>"
+            });
+
+            // Status Filter Dropdown (Column index 7) with whitespace-safe regex matching
+            $('#statusFilter').on('change', function() {
+                var val = $(this).val();
+                table.column(7).search(val ? '^\\s*' + val + '\\s*$' : '', true, false).draw();
+            });
+
+            // Department Filter Dropdown (Column index 3) with exact matching
+            $('#deptFilter').on('change', function() {
+                var val = $(this).val();
+                table.column(3).search(val ? '^\\s*' + val + '\\s*$' : '', true, false).draw();
+            });
+
+            // Open Delete confirmation Modal
+            $(document).on('click', '.btn-delete-employee', function() {
+                var employeeId = $(this).data('id');
+                var employeeName = $(this).data('name');
+                var employeeCode = $(this).data('code');
+                
+                $('#deleteEmployeeId').val(employeeId);
+                $('#deleteEmployeeName').text(employeeName);
+                $('#deleteEmployeeCode').text(employeeCode);
+                
+                var myModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+                myModal.show();
+            });
+        });
+    </script>
+}
+
+<style>
+    .bg-success-subtle { background-color: rgba(25, 135, 84, 0.1) !important; }
+    .bg-danger-subtle { background-color: rgba(220, 53, 69, 0.1) !important; }
+    .bg-secondary-subtle { background-color: rgba(108, 117, 125, 0.1) !important; }
+    .text-primary { color: #1e3c72 !important; }
+    .fs-7 { font-size: 0.85rem; }
+    .fs-8 { font-size: 0.75rem; }
+    .cursor-pointer { cursor: pointer; }
+    .dataTables_filter input {
+        border-radius: 6px;
+        border: 1px solid #ced4da;
+        padding: 6px 12px;
+    }
+    .dataTables_length select {
+        border-radius: 6px;
+        border: 1px solid #ced4da;
+        padding: 6px 12px;
+    }
+</style>

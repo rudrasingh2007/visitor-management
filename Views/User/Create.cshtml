@@ -1,0 +1,144 @@
+@model VisitorManagementSystem.ViewModels.UserViewModel
+@{
+    ViewData["Title"] = "Add User";
+}
+
+<div class="container-fluid px-4 py-4">
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0 bg-transparent p-0">
+            <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index" class="text-decoration-none"><i class="fa-solid fa-house me-1"></i>Home</a></li>
+            <li class="breadcrumb-item"><a asp-action="Index" class="text-decoration-none">User List</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Add User</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="mb-4">
+        <h3 class="fw-bold text-dark mb-1"><i class="fa-solid fa-user-plus me-2 text-primary"></i>Add User</h3>
+        <p class="text-muted mb-0">Create a new system user, assign a role, and configure details.</p>
+    </div>
+
+    <div class="row">
+        <div class="col-12 col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-body p-4">
+                    <form asp-action="Create" method="post" autocomplete="off">
+                        @Html.AntiForgeryToken()
+                        
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3 small"></div>
+
+                        <div class="row">
+                            <!-- Username -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Username" class="form-label fw-semibold text-dark">Username <span class="text-danger">*</span></label>
+                                <input asp-for="Username" class="form-control rounded-2 p-2" placeholder="Enter username" required />
+                                <span asp-validation-for="Username" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Full Name -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="FullName" class="form-label fw-semibold text-dark">Full Name <span class="text-danger">*</span></label>
+                                <input asp-for="FullName" class="form-control rounded-2 p-2" placeholder="Enter full name" required />
+                                <span asp-validation-for="FullName" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Email -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Email" class="form-label fw-semibold text-dark">Email Address <span class="text-danger">*</span></label>
+                                <input asp-for="Email" type="email" class="form-control rounded-2 p-2" placeholder="e.g. user@example.com" required />
+                                <span asp-validation-for="Email" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Mobile Number -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="MobileNumber" class="form-label fw-semibold text-dark">Mobile Number <span class="text-danger">*</span></label>
+                                <input asp-for="MobileNumber" class="form-control rounded-2 p-2" placeholder="Enter mobile number" required />
+                                <span asp-validation-for="MobileNumber" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Password -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="Password" class="form-label fw-semibold text-dark">Password <span class="text-danger">*</span></label>
+                                <input asp-for="Password" type="password" class="form-control rounded-2 p-2" placeholder="Enter password" required />
+                                <span asp-validation-for="Password" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Role Dropdown (Mandatory) -->
+                            <div class="col-md-6 mb-3">
+                                <label asp-for="RoleId" class="form-label fw-semibold text-dark">Assign Role <span class="text-danger">*</span></label>
+                                <select asp-for="RoleId" class="form-select rounded-2 p-2" asp-items="ViewBag.RolesList" required>
+                                    <option value="">-- Select Role --</option>
+                                </select>
+                                <span asp-validation-for="RoleId" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Status Dropdown -->
+                            <div class="col-md-6 mb-4">
+                                <label asp-for="Status" class="form-label fw-semibold text-dark">Status <span class="text-danger">*</span></label>
+                                <select asp-for="Status" class="form-select rounded-2 p-2" required>
+                                    <option value="Active">Active</option>
+                                    <option value="Inactive">Inactive</option>
+                                </select>
+                                <span asp-validation-for="Status" class="text-danger small"></span>
+                            </div>
+
+                            <!-- Employee Dropdown Group -->
+                            <div class="col-md-6 mb-4" id="employeeDropdownGroup" style="display: none;">
+                                <label asp-for="EmployeeId" class="form-label fw-semibold text-dark">Select Employee <span class="text-danger">*</span></label>
+                                <select asp-for="EmployeeId" class="form-select rounded-2 p-2" asp-items="ViewBag.EmployeesList">
+                                    <option value="">-- Select Employee --</option>
+                                </select>
+                                <span asp-validation-for="EmployeeId" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <!-- Buttons -->
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary px-4 py-2 fw-semibold rounded-2 shadow-sm">
+                                <i class="fa-solid fa-user-plus me-2"></i>Save User
+                            </button>
+                            <a asp-action="Index" class="btn btn-outline-secondary px-4 py-2 rounded-2">
+                                Cancel
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        $(document).ready(function () {
+            var employeeRoleId = '@ViewBag.EmployeeRoleId';
+
+            function toggleEmployeeDropdown() {
+                var selectedRoleId = $('#RoleId').val();
+                if (selectedRoleId && selectedRoleId === employeeRoleId) {
+                    $('#employeeDropdownGroup').show();
+                    $('#EmployeeId').prop('required', true);
+                } else {
+                    $('#employeeDropdownGroup').hide();
+                    $('#EmployeeId').val('').prop('required', false);
+                }
+            }
+
+            // Bind change event
+            $('#RoleId').change(function () {
+                toggleEmployeeDropdown();
+            });
+
+            // Initial call
+            toggleEmployeeDropdown();
+        });
+    </script>
+}

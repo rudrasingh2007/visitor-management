@@ -1,0 +1,170 @@
+@model VisitorManagementSystem.ViewModels.AppointmentViewModel
+@{
+    ViewData["Title"] = "Schedule Appointment";
+}
+
+<div class="container-fluid px-4 py-4">
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0 bg-transparent p-0">
+            <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index" class="text-decoration-none"><i class="fa-solid fa-house me-1"></i>Home</a></li>
+            <li class="breadcrumb-item text-muted">Appointment Management</li>
+            <li class="breadcrumb-item active" aria-current="page">Schedule Appointment</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="mb-4">
+        <h3 class="fw-bold text-dark mb-1"><i class="fa-solid fa-calendar-plus me-2 text-primary"></i>Schedule Appointment</h3>
+        <p class="text-muted mb-0">Book a new appointment between a visitor and an employee.</p>
+    </div>
+
+    <!-- Form Card -->
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4 p-md-5">
+            <form asp-action="Create" method="post">
+                @Html.AntiForgeryToken()
+                
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-3 p-3 mb-4 fs-7" role="alert">
+                    <i class="fa-solid fa-circle-exclamation me-2"></i>Please correct the errors below.
+                </div>
+
+                <div class="row g-4">
+                    <!-- Visitor Selection -->
+                    <div class="col-12 col-md-6">
+                        <label asp-for="VisitorId" class="form-label fw-semibold text-secondary">Visitor <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 rounded-start-3 text-muted"><i class="fa-solid fa-user-circle"></i></span>
+                            <select asp-for="VisitorId" class="form-select border-start-0 rounded-end-3" asp-items="ViewBag.VisitorsList">
+                                <option value="">Select Active Visitor</option>
+                            </select>
+                        </div>
+                        <span asp-validation-for="VisitorId" class="text-danger small mt-1 d-block"></span>
+                    </div>
+
+                    <!-- Department Selection -->
+                    <div class="col-12 col-md-6">
+                        <label asp-for="DepartmentId" class="form-label fw-semibold text-secondary">Department <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 rounded-start-3 text-muted"><i class="fa-solid fa-sitemap"></i></span>
+                            <select asp-for="DepartmentId" class="form-select border-start-0 rounded-end-3" asp-items="ViewBag.DepartmentsList" id="DepartmentId">
+                                <option value="">Select Active Department</option>
+                            </select>
+                        </div>
+                        <span asp-validation-for="DepartmentId" class="text-danger small mt-1 d-block"></span>
+                    </div>
+
+                    <!-- Employee Selection (Dependent Dropdown) -->
+                    <div class="col-12 col-md-6">
+                        <label asp-for="EmployeeId" class="form-label fw-semibold text-secondary">Employee <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 rounded-start-3 text-muted"><i class="fa-solid fa-user-tie"></i></span>
+                            <select asp-for="EmployeeId" class="form-select border-start-0 rounded-end-3" id="EmployeeId">
+                                <option value="">Select Department First</option>
+                            </select>
+                        </div>
+                        <span asp-validation-for="EmployeeId" class="text-danger small mt-1 d-block"></span>
+                    </div>
+
+                    <!-- Appointment Date -->
+                    <div class="col-12 col-md-3">
+                        <label asp-for="AppointmentDate" class="form-label fw-semibold text-secondary">Appointment Date <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 rounded-start-3 text-muted"><i class="fa-solid fa-calendar"></i></span>
+                            <input asp-for="AppointmentDate" type="date" class="form-control border-start-0 rounded-end-3" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                        </div>
+                        <span asp-validation-for="AppointmentDate" class="text-danger small mt-1 d-block"></span>
+                    </div>
+
+                    <!-- Appointment Time -->
+                    <div class="col-12 col-md-3">
+                        <label asp-for="AppointmentTime" class="form-label fw-semibold text-secondary">Appointment Time <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 rounded-start-3 text-muted"><i class="fa-solid fa-clock"></i></span>
+                            <input asp-for="AppointmentTime" type="time" class="form-control border-start-0 rounded-end-3" />
+                        </div>
+                        <span asp-validation-for="AppointmentTime" class="text-danger small mt-1 d-block"></span>
+                    </div>
+
+                    <!-- Purpose of Visit -->
+                    <div class="col-12">
+                        <label asp-for="Purpose" class="form-label fw-semibold text-secondary">Purpose of Visit <span class="text-danger">*</span></label>
+                        <textarea asp-for="Purpose" rows="3" class="form-control rounded-3" placeholder="Enter detailed purpose of visit..."></textarea>
+                        <span asp-validation-for="Purpose" class="text-danger small mt-1 d-block"></span>
+                    </div>
+
+                    <!-- Remarks -->
+                    <div class="col-12">
+                        <label asp-for="Remarks" class="form-label fw-semibold text-secondary">Remarks</label>
+                        <textarea asp-for="Remarks" rows="2" class="form-control rounded-3" placeholder="Any additional notes or remarks..."></textarea>
+                        <span asp-validation-for="Remarks" class="text-danger small mt-1 d-block"></span>
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="d-flex justify-content-end gap-2 mt-5">
+                    <a asp-action="Index" class="btn btn-secondary px-4 py-2 rounded-3 fw-semibold">
+                        <i class="fa-solid fa-xmark me-2"></i>Cancel
+                    </a>
+                    <button type="submit" class="btn btn-primary px-4 py-2 rounded-3 fw-semibold shadow-sm">
+                        <i class="fa-solid fa-floppy-disk me-2"></i>Save Appointment
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function() {
+            // Function to load employees based on department selection
+            function loadEmployees(deptId, selectedEmployeeId) {
+                var $employeeSelect = $('#EmployeeId');
+                
+                // Reset employee dropdown
+                $employeeSelect.empty();
+                
+                if (!deptId) {
+                    $employeeSelect.append('<option value="">Select Department First</option>');
+                    return;
+                }
+                
+                $employeeSelect.append('<option value="">Select Active Employee</option>');
+                
+                $.getJSON('@Url.Action("GetEmployeesByDepartment", "Appointment")', { departmentId: deptId }, function(data) {
+                    $.each(data, function(index, item) {
+                        var option = $('<option>', {
+                            value: item.value,
+                            text: item.text
+                        });
+                        
+                        if (selectedEmployeeId && item.value == selectedEmployeeId) {
+                            option.prop('selected', true);
+                        }
+                        
+                        $employeeSelect.append(option);
+                    });
+                });
+            }
+
+            // Department change trigger
+            $('#DepartmentId').on('change', function() {
+                loadEmployees($(this).val(), null);
+            });
+
+            // Initialize on load if department was pre-selected (e.g. on validation failure reload)
+            var initialDeptId = $('#DepartmentId').val();
+            if (initialDeptId) {
+                loadEmployees(initialDeptId, '@Model?.EmployeeId');
+            }
+        });
+    </script>
+}
+
+<style>
+    .text-primary { color: #1e3c72 !important; }
+    .bg-light { background-color: #f8f9fa !important; }
+    .fs-7 { font-size: 0.85rem; }
+</style>

@@ -1,0 +1,810 @@
+@model VisitorManagementSystem.ViewModels.DashboardViewModel
+@{
+    ViewData["Title"] = "Visitor Dashboard";
+}
+
+<div class="container-fluid px-4 py-4">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+        <div>
+            <h3 class="fw-bold text-dark mb-1"><i class="fa-solid fa-chart-line me-2 text-primary"></i>Dashboard</h3>
+            <p class="text-muted mb-0">Welcome back! Here is your real-time visitor management status.</p>
+        </div>
+        <div>
+            <span class="badge bg-primary px-3 py-2 rounded-pill shadow-sm"><i class="fa-regular fa-clock me-1"></i> Live Stats (@Model.RoleName Mode)</span>
+        </div>
+    </div>
+
+    @if (Model.RoleName == "Security Guard")
+    {
+        <!-- Security Guard KPI Grid Cards -->
+        <div class="row g-3 mb-4">
+            <!-- Pending Requests -->
+            <div class="col-12 col-sm-6 col-md-4 col-xl">
+                <div class="card stat-card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-warning border-4 position-relative overflow-hidden">
+                    <div class="card-body p-0 d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted small uppercase fw-semibold d-block mb-1">Pending Requests</span>
+                            <h3 class="fw-bold mb-0 text-dark">@Model.SGPendingRequests</h3>
+                        </div>
+                        <div class="stat-icon-wrapper bg-warning bg-opacity-10 text-warning rounded-circle p-2">
+                            <i class="fa-solid fa-hourglass-half fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Approved Requests Today -->
+            <div class="col-12 col-sm-6 col-md-4 col-xl">
+                <div class="card stat-card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-success border-4 position-relative overflow-hidden">
+                    <div class="card-body p-0 d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted small uppercase fw-semibold d-block mb-1">Approved Requests</span>
+                            <h3 class="fw-bold mb-0 text-dark">@Model.SGApprovedRequests</h3>
+                        </div>
+                        <div class="stat-icon-wrapper bg-success bg-opacity-10 text-success rounded-circle p-2">
+                            <i class="fa-solid fa-circle-check fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rejected Requests Today -->
+            <div class="col-12 col-sm-6 col-md-4 col-xl">
+                <div class="card stat-card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-danger border-4 position-relative overflow-hidden">
+                    <div class="card-body p-0 d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted small uppercase fw-semibold d-block mb-1">Rejected Requests</span>
+                            <h3 class="fw-bold mb-0 text-dark">@Model.SGRejectedRequests</h3>
+                        </div>
+                        <div class="stat-icon-wrapper bg-danger bg-opacity-10 text-danger rounded-circle p-2">
+                            <i class="fa-solid fa-circle-xmark fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visitors Inside -->
+            <div class="col-12 col-sm-6 col-md-4 col-xl">
+                <div class="card stat-card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-primary border-4 position-relative overflow-hidden">
+                    <div class="card-body p-0 d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted small uppercase fw-semibold d-block mb-1">Visitors Inside</span>
+                            <h3 class="fw-bold mb-0 text-dark">@Model.SGVisitorsInside</h3>
+                        </div>
+                        <div class="stat-icon-wrapper bg-primary bg-opacity-10 text-primary rounded-circle p-2">
+                            <i class="fa-solid fa-building-circle-check fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Passes Generated Today -->
+            <div class="col-12 col-sm-6 col-md-4 col-xl">
+                <div class="card stat-card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-info border-4 position-relative overflow-hidden">
+                    <div class="card-body p-0 d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted small uppercase fw-semibold d-block mb-1">Passes Today</span>
+                            <h3 class="fw-bold mb-0 text-dark">@Model.SGPassesGeneratedToday</h3>
+                        </div>
+                        <div class="stat-icon-wrapper bg-info bg-opacity-10 text-info rounded-circle p-2">
+                            <i class="fa-solid fa-ticket fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Security Guard Recent Check-Ins List -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-door-open me-2 text-primary"></i>Recent Check-Ins</h5>
+                        <a asp-controller="Visit" asp-action="Index" class="btn btn-sm btn-light text-primary fw-semibold rounded-2 px-3">View All</a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light text-muted fs-8 fw-semibold uppercase">
+                                <tr>
+                                    <th>Visitor Name</th>
+                                    <th>Check-In Time</th>
+                                    <th class="text-center">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (!Model.RecentCheckIns.Any())
+                                {
+                                    <tr>
+                                        <td colspan="3" class="text-center text-muted py-4 small">No visitor movements recorded.</td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    @foreach (var log in Model.RecentCheckIns)
+                                    {
+                                        <tr>
+                                            <td class="fw-semibold text-dark">@(log.Visitor != null ? $"{log.Visitor.FirstName} {log.Visitor.LastName}" : "-")</td>
+                                            <td class="small text-dark">
+                                                @log.CheckInTime.ToLocalTime().ToString("dd MMM yyyy")
+                                                <span class="text-muted ms-1">@log.CheckInTime.ToLocalTime().ToString("hh:mm tt")</span>
+                                            </td>
+                                            <td class="text-center">
+                                                @switch (log.VisitStatus)
+                                                {
+                                                    case "Checked In":
+                                                        <span class="badge bg-primary-subtle text-primary px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-arrow-right-to-bracket me-1"></i>Checked In</span>
+                                                        break;
+                                                    case "In Meeting":
+                                                        <span class="badge bg-info-subtle text-info px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-comments me-1"></i>In Meeting</span>
+                                                        break;
+                                                    case "Completed":
+                                                        <span class="badge bg-success-subtle text-success px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-circle-check me-1"></i>Completed</span>
+                                                        break;
+                                                    default:
+                                                        <span class="badge bg-secondary px-2.5 py-1.5 rounded-pill fs-9">@log.VisitStatus</span>
+                                                        break;
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else if (Model.RoleName == "Employee")
+    {
+        <!-- Employee KPI Grid Cards -->
+        <div class="row g-3 mb-4">
+            <!-- Pending Approvals -->
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="card stat-card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-warning border-4 position-relative overflow-hidden">
+                    <div class="card-body p-0 d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted small uppercase fw-semibold d-block mb-1">Pending Approvals</span>
+                            <h3 class="fw-bold mb-0 text-dark">@Model.EmpPendingApprovals</h3>
+                        </div>
+                        <div class="stat-icon-wrapper bg-warning bg-opacity-10 text-warning rounded-circle p-2">
+                            <i class="fa-solid fa-clock-rotate-left fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Approved Today -->
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="card stat-card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-success border-4 position-relative overflow-hidden">
+                    <div class="card-body p-0 d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted small uppercase fw-semibold d-block mb-1">Approved Today</span>
+                            <h3 class="fw-bold mb-0 text-dark">@Model.EmpApprovedToday</h3>
+                        </div>
+                        <div class="stat-icon-wrapper bg-success bg-opacity-10 text-success rounded-circle p-2">
+                            <i class="fa-solid fa-circle-check fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Rejected Today -->
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="card stat-card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-danger border-4 position-relative overflow-hidden">
+                    <div class="card-body p-0 d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted small uppercase fw-semibold d-block mb-1">Rejected Today</span>
+                            <h3 class="fw-bold mb-0 text-dark">@Model.EmpRejectedToday</h3>
+                        </div>
+                        <div class="stat-icon-wrapper bg-danger bg-opacity-10 text-danger rounded-circle p-2">
+                            <i class="fa-solid fa-circle-xmark fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visitors Waiting (Currently inside meeting) -->
+            <div class="col-12 col-sm-6 col-lg-3">
+                <div class="card stat-card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-primary border-4 position-relative overflow-hidden">
+                    <div class="card-body p-0 d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted small uppercase fw-semibold d-block mb-1">Visitors Waiting</span>
+                            <h3 class="fw-bold mb-0 text-dark">@Model.EmpVisitorsWaiting</h3>
+                        </div>
+                        <div class="stat-icon-wrapper bg-primary bg-opacity-10 text-primary rounded-circle p-2">
+                            <i class="fa-solid fa-hourglass fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Employee Inline Pending Visitor Requests Table -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-hourglass-half me-2 text-warning"></i>Pending Visitor Requests</h5>
+                        <a asp-controller="EntryRequest" asp-action="Pending" class="btn btn-sm btn-light text-primary fw-semibold rounded-2 px-3">View Full List</a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0">
+                            <thead class="table-light text-muted fs-8 fw-semibold uppercase">
+                                <tr>
+                                    <th>Request Time</th>
+                                    <th>Visitor Name</th>
+                                    <th>Mobile Number</th>
+                                    <th>Company Name</th>
+                                    <th>Purpose</th>
+                                    <th style="min-width: 320px;">Actions & Remarks</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (!Model.PendingRequests.Any())
+                                {
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted py-4 small">No pending visitor approval requests.</td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    @foreach (var request in Model.PendingRequests)
+                                    {
+                                        <tr>
+                                            <td class="small text-dark">
+                                                @request.RequestDateTime.ToLocalTime().ToString("dd MMM yyyy")
+                                                <span class="text-muted d-block fs-8">@request.RequestDateTime.ToLocalTime().ToString("hh:mm tt")</span>
+                                            </td>
+                                            <td class="fw-semibold text-dark">@(request.Visitor != null ? $"{request.Visitor.FirstName} {request.Visitor.LastName}" : "-")</td>
+                                            <td class="text-muted small">@(request.Visitor?.MobileNumber ?? "-")</td>
+                                            <td class="small text-dark">@(request.Visitor?.CompanyName ?? "N/A")</td>
+                                            <td class="small text-muted">@request.Purpose</td>
+                                            <td>
+                                                <div class="d-flex align-items-center gap-2">
+                                                    <button type="button" class="btn btn-sm btn-success rounded-pill px-3 d-flex align-items-center gap-1 btn-process-request" data-id="@request.EntryRequestId" data-action="Approve">
+                                                        <i class="fa-solid fa-check"></i>Approve
+                                                    </button>
+                                                    <button type="button" class="btn btn-sm btn-danger rounded-pill px-3 d-flex align-items-center gap-1 btn-process-request" data-id="@request.EntryRequestId" data-action="Reject">
+                                                        <i class="fa-solid fa-xmark"></i>Reject
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Approval/Rejection Modal -->
+        <div class="modal fade" id="remarksModal" tabindex="-1" aria-labelledby="remarksModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content rounded-4 border-0 shadow">
+                    <div class="modal-header border-bottom-0 pb-0">
+                        <h5 class="modal-title fw-bold text-dark" id="remarksModalLabel">Process Entry Request</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <form id="remarksForm" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" id="modalRequestId" value="" />
+                        <div class="modal-body py-3">
+                            <p class="text-muted small mb-3">Please provide any remarks/notes for this action.</p>
+                            <div class="mb-3">
+                                <label for="approvalRemarks" class="form-label fw-semibold text-secondary">Remarks <span class="text-danger">*</span></label>
+                                <textarea class="form-control rounded-3" id="approvalRemarks" name="approvalRemarks" rows="3" placeholder="Enter remarks here..." required></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-top-0 pt-0">
+                            <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" id="submitModalBtn" class="btn btn-success rounded-pill px-4">Confirm</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Default Admin / General Dashboard -->
+        <div class="row g-3 mb-4">
+            <!-- Visitors Today -->
+            <div class="col-12 col-sm-6 col-md-4 col-xxl-2">
+                <div class="card stat-card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-primary border-4 position-relative overflow-hidden">
+                    <div class="card-body p-0 d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted small uppercase fw-semibold d-block mb-1">Visitors Today</span>
+                            <h3 class="fw-bold mb-0 text-dark">@Model.VisitorsToday</h3>
+                        </div>
+                        <div class="stat-icon-wrapper bg-primary bg-opacity-10 text-primary rounded-circle p-2">
+                            <i class="fa-solid fa-users fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visitors Inside -->
+            <div class="col-12 col-sm-6 col-md-4 col-xxl-2">
+                <div class="card stat-card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-success border-4 position-relative overflow-hidden">
+                    <div class="card-body p-0 d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted small uppercase fw-semibold d-block mb-1">Visitors Inside</span>
+                            <h3 class="fw-bold mb-0 text-dark">@Model.VisitorsCurrentlyInside</h3>
+                        </div>
+                        <div class="stat-icon-wrapper bg-success bg-opacity-10 text-success rounded-circle p-2">
+                            <i class="fa-solid fa-building-circle-check fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Visits Today -->
+            <div class="col-12 col-sm-6 col-md-4 col-xxl-2">
+                <div class="card stat-card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-info border-4 position-relative overflow-hidden">
+                    <div class="card-body p-0 d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted small uppercase fw-semibold d-block mb-1">Total Visits Today</span>
+                            <h3 class="fw-bold mb-0 text-dark">@Model.TotalVisitsToday</h3>
+                        </div>
+                        <div class="stat-icon-wrapper bg-info bg-opacity-10 text-info rounded-circle p-2">
+                            <i class="fa-solid fa-right-to-bracket fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pending Appointments -->
+            <div class="col-12 col-sm-6 col-md-4 col-xxl-2">
+                <div class="card stat-card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-warning border-4 position-relative overflow-hidden">
+                    <div class="card-body p-0 d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted small uppercase fw-semibold d-block mb-1">Pending Appts</span>
+                            <h3 class="fw-bold mb-0 text-dark">@Model.PendingAppointments</h3>
+                        </div>
+                        <div class="stat-icon-wrapper bg-warning bg-opacity-10 text-warning rounded-circle p-2">
+                            <i class="fa-regular fa-calendar-check fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Approved Appointments -->
+            <div class="col-12 col-sm-6 col-md-4 col-xxl-2">
+                <div class="card stat-card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-teal border-4 position-relative overflow-hidden">
+                    <div class="card-body p-0 d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted small uppercase fw-semibold d-block mb-1">Approved Appts</span>
+                            <h3 class="fw-bold mb-0 text-dark">@Model.ApprovedAppointments</h3>
+                        </div>
+                        <div class="stat-icon-wrapper bg-teal bg-opacity-10 text-teal rounded-circle p-2">
+                            <i class="fa-solid fa-calendar-check fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Gate Passes Today -->
+            <div class="col-12 col-sm-6 col-md-4 col-xxl-2">
+                <div class="card stat-card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-danger border-4 position-relative overflow-hidden">
+                    <div class="card-body p-0 d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted small uppercase fw-semibold d-block mb-1">Gate Passes Today</span>
+                            <h3 class="fw-bold mb-0 text-dark">@Model.GatePassesToday</h3>
+                        </div>
+                        <div class="stat-icon-wrapper bg-danger bg-opacity-10 text-danger rounded-circle p-2">
+                            <i class="fa-solid fa-address-card fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Section -->
+        <div class="row g-4 mb-5">
+            <!-- 1. Daily Visitor Trend -->
+            <div class="col-12 col-lg-6">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+                        <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-chart-line me-2 text-primary"></i>Daily Visitor Trend</h6>
+                        <p class="text-muted small mb-0">Visitor count for the last 7 days</p>
+                    </div>
+                    <div class="card-body px-4 py-3">
+                        <div style="position: relative; height: 220px; width: 100%;">
+                            <canvas id="dailyTrendChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Appointment Status Summary -->
+            <div class="col-12 col-lg-6">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+                        <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-chart-pie me-2 text-success"></i>Appointment Status Summary</h6>
+                        <p class="text-muted small mb-0">Current status ratio of all booked appointments</p>
+                    </div>
+                    <div class="card-body px-4 py-3 d-flex align-items-center justify-content-center">
+                        <div style="position: relative; height: 220px; width: 100%; max-width: 320px;">
+                            <canvas id="apptStatusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Department-wise Visitors -->
+            <div class="col-12 col-lg-6">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+                        <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-building me-2 text-info"></i>Department-wise Visitors</h6>
+                        <p class="text-muted small mb-0">Total logged visits per organization department</p>
+                    </div>
+                    <div class="card-body px-4 py-3">
+                        <div style="position: relative; height: 220px; width: 100%;">
+                            <canvas id="deptVisitorsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Monthly Visitor Statistics -->
+            <div class="col-12 col-lg-6">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
+                        <h6 class="fw-bold text-dark mb-0"><i class="fa-regular fa-calendar-days me-2 text-warning"></i>Monthly Visitor Statistics</h6>
+                        <p class="text-muted small mb-0">Historical visitor statistics by month (Last 6 Months)</p>
+                    </div>
+                    <div class="card-body px-4 py-3">
+                        <div style="position: relative; height: 220px; width: 100%;">
+                            <canvas id="monthlyStatsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Tables Row -->
+        <div class="row g-4">
+            <!-- Recent Appointments -->
+            <div class="col-12 col-xl-6">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-header bg-white border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+                        <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-clock-rotate-left me-2 text-primary"></i>Recent Appointments</h5>
+                        <a asp-controller="Appointment" asp-action="Index" class="btn btn-sm btn-light text-primary fw-semibold rounded-2 px-3">View All</a>
+                    </div>
+                    <div class="card-body px-4 py-3">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light text-muted fs-8 fw-semibold uppercase">
+                                    <tr>
+                                        <th>Visitor Name</th>
+                                        <th>Employee Name</th>
+                                        <th>Appointment Date</th>
+                                        <th class="text-center">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (!Model.RecentAppointments.Any())
+                                    {
+                                        <tr>
+                                            <td colspan="4" class="text-center text-muted py-4 small">No recent appointments booked.</td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var appt in Model.RecentAppointments)
+                                        {
+                                            <tr>
+                                                <td class="fw-semibold text-dark">@(appt.Visitor != null ? $"{appt.Visitor.FirstName} {appt.Visitor.LastName}" : "-")</td>
+                                                <td class="text-muted small">@(appt.Employee != null ? $"{appt.Employee.FirstName} {appt.Employee.LastName}" : "-")</td>
+                                                <td class="small text-dark">
+                                                    @appt.AppointmentDate.ToString("dd MMM yyyy")
+                                                    <span class="text-muted ms-1">@appt.AppointmentTime.ToString(@"hh\:mm")</span>
+                                                </td>
+                                                <td class="text-center">
+                                                    @switch (appt.Status)
+                                                    {
+                                                        case "Pending":
+                                                            <span class="badge bg-warning-subtle text-warning px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-clock-rotate-left me-1"></i>Pending</span>
+                                                            break;
+                                                        case "Approved":
+                                                            <span class="badge bg-success-subtle text-success px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-circle-check me-1"></i>Approved</span>
+                                                            break;
+                                                        case "Rejected":
+                                                            <span class="badge bg-danger-subtle text-danger px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-circle-xmark me-1"></i>Rejected</span>
+                                                            break;
+                                                        case "Cancelled":
+                                                            <span class="badge bg-secondary-subtle text-secondary px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-ban me-1"></i>Cancelled</span>
+                                                            break;
+                                                        case "Completed":
+                                                            <span class="badge bg-info-subtle text-info px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-circle-check me-1"></i>Completed</span>
+                                                            break;
+                                                        default:
+                                                            <span class="badge bg-secondary px-2.5 py-1.5 rounded-pill fs-9">@appt.Status</span>
+                                                            break;
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Visitor Activity -->
+            <div class="col-12 col-xl-6">
+                <div class="card border-0 shadow-sm rounded-4 h-100">
+                    <div class="card-header bg-white border-0 pt-4 px-4 pb-0 d-flex justify-content-between align-items-center">
+                        <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-door-open me-2 text-primary"></i>Recent Check-Ins</h5>
+                        <a asp-controller="Visit" asp-action="Index" class="btn btn-sm btn-light text-primary fw-semibold rounded-2 px-3">View All</a>
+                    </div>
+                    <div class="card-body px-4 py-3">
+                        <div class="table-responsive">
+                            <table class="table table-hover align-middle mb-0">
+                                <thead class="table-light text-muted fs-8 fw-semibold uppercase">
+                                    <tr>
+                                        <th>Visitor Name</th>
+                                        <th>Check-In Time</th>
+                                        <th class="text-center">Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @if (!Model.RecentCheckIns.Any())
+                                    {
+                                        <tr>
+                                            <td colspan="3" class="text-center text-muted py-4 small">No visitor movements recorded.</td>
+                                        </tr>
+                                    }
+                                    else
+                                    {
+                                        @foreach (var log in Model.RecentCheckIns)
+                                        {
+                                            <tr>
+                                                <td class="fw-semibold text-dark">@(log.Visitor != null ? $"{log.Visitor.FirstName} {log.Visitor.LastName}" : "-")</td>
+                                                <td class="small text-dark">
+                                                    @log.CheckInTime.ToLocalTime().ToString("dd MMM yyyy")
+                                                    <span class="text-muted ms-1">@log.CheckInTime.ToLocalTime().ToString("hh:mm tt")</span>
+                                                </td>
+                                                <td class="text-center">
+                                                    @switch (log.VisitStatus)
+                                                    {
+                                                        case "Checked In":
+                                                            <span class="badge bg-primary-subtle text-primary px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-arrow-right-to-bracket me-1"></i>Checked In</span>
+                                                            break;
+                                                        case "In Meeting":
+                                                            <span class="badge bg-info-subtle text-info px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-comments me-1"></i>In Meeting</span>
+                                                            break;
+                                                        case "Completed":
+                                                            <span class="badge bg-success-subtle text-success px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-circle-check me-1"></i>Completed</span>
+                                                            break;
+                                                        default:
+                                                            <span class="badge bg-secondary px-2.5 py-1.5 rounded-pill fs-9">@log.VisitStatus</span>
+                                                            break;
+                                                    }
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    }
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Process Entry Request (Approve/Reject Modal)
+            if ($('.btn-process-request').length) {
+                $('.btn-process-request').on('click', function () {
+                    var id = $(this).data('id');
+                    var action = $(this).data('action');
+                    
+                    $('#modalRequestId').val(id);
+                    $('#remarksForm').attr('action', '/EntryRequest/' + action);
+                    
+                    if (action === 'Approve') {
+                        $('#remarksModalLabel').text('Approve Entry Request');
+                        $('#submitModalBtn').removeClass('btn-danger').addClass('btn-success').text('Approve');
+                        $('#approvalRemarks').attr('placeholder', 'Enter approval remarks (e.g., Please proceed to meet)...');
+                    } else {
+                        $('#remarksModalLabel').text('Reject Entry Request');
+                        $('#submitModalBtn').removeClass('btn-success').addClass('btn-danger').text('Reject');
+                        $('#approvalRemarks').attr('placeholder', 'Enter reason for rejection...');
+                    }
+                    
+                    $('#approvalRemarks').val('');
+                    
+                    var myModal = new bootstrap.Modal(document.getElementById('remarksModal'));
+                    myModal.show();
+                });
+            }
+
+            // Charts (only render if admin charts canvas exists)
+            if ($('#dailyTrendChart').length) {
+                // 1. Daily Visitor Trend (Line Chart)
+                const dailyTrendCtx = document.getElementById('dailyTrendChart').getContext('2d');
+                new Chart(dailyTrendCtx, {
+                    type: 'line',
+                    data: {
+                        labels: @Html.Raw(Json.Serialize(Model.DailyTrendLabels)),
+                        datasets: [{
+                            label: 'Visitors',
+                            data: @Html.Raw(Json.Serialize(Model.DailyTrendData)),
+                            borderColor: '#1e3c72',
+                            backgroundColor: 'rgba(30, 60, 114, 0.1)',
+                            borderWidth: 3,
+                            fill: true,
+                            tension: 0.3,
+                            pointBackgroundColor: '#1e3c72',
+                            pointBorderColor: '#fff',
+                            pointHoverRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { stepSize: 1, precision: 0 }
+                            }
+                        }
+                    }
+                });
+
+                // 2. Appointment Status Summary (Doughnut Chart)
+                const apptStatusCtx = document.getElementById('apptStatusChart').getContext('2d');
+                new Chart(apptStatusCtx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: @Html.Raw(Json.Serialize(Model.AppointmentStatusLabels)),
+                        datasets: [{
+                            data: @Html.Raw(Json.Serialize(Model.AppointmentStatusData)),
+                            backgroundColor: [
+                                '#ffc107', // Pending
+                                '#198754', // Approved
+                                '#dc3545', // Rejected
+                                '#6c757d', // Cancelled
+                                '#0dcaf0'  // Completed
+                            ],
+                            borderWidth: 2,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: { boxWidth: 12, font: { size: 11 } }
+                            }
+                        }
+                    }
+                });
+
+                // 3. Department-wise Visitors (Bar Chart)
+                const deptVisitorsCtx = document.getElementById('deptVisitorsChart').getContext('2d');
+                new Chart(deptVisitorsCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: @Html.Raw(Json.Serialize(Model.DepartmentLabels)),
+                        datasets: [{
+                            label: 'Visitors',
+                            data: @Html.Raw(Json.Serialize(Model.DepartmentData)),
+                            backgroundColor: '#0dcaf0',
+                            borderColor: '#0b5ed7',
+                            borderWidth: 0,
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { stepSize: 1, precision: 0 }
+                            }
+                        }
+                    }
+                });
+
+                // 4. Monthly Visitor Statistics (Bar Chart)
+                const monthlyStatsCtx = document.getElementById('monthlyStatsChart').getContext('2d');
+                new Chart(monthlyStatsCtx, {
+                    type: 'bar',
+                    data: {
+                        labels: @Html.Raw(Json.Serialize(Model.MonthlyLabels)),
+                        datasets: [{
+                            label: 'Visitors',
+                            data: @Html.Raw(Json.Serialize(Model.MonthlyData)),
+                            backgroundColor: '#ffc107',
+                            borderColor: '#e0a800',
+                            borderWidth: 0,
+                            borderRadius: 6
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true,
+                                ticks: { stepSize: 1, precision: 0 }
+                            }
+                        }
+                    }
+                });
+            }
+        });
+    </script>
+}
+</div>
+
+<style>
+    .stat-card {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .stat-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.05) !important;
+    }
+    .uppercase {
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+    }
+    .fs-8 { font-size: 0.75rem; }
+    .fs-9 { font-size: 0.7rem; }
+    .px-2.5 { padding-left: 0.6rem; padding-right: 0.6rem; }
+    .py-1.5 { padding-top: 0.3rem; padding-bottom: 0.3rem; }
+    
+    .border-primary { border-color: #1e3c72 !important; }
+    .border-success { border-color: #198754 !important; }
+    .border-danger { border-color: #dc3545 !important; }
+    .border-warning { border-color: #ffc107 !important; }
+    .border-info { border-color: #0dcaf0 !important; }
+    .border-teal { border-color: #20c997 !important; }
+
+    .bg-teal { background-color: #20c997 !important; }
+    .bg-teal.bg-opacity-10 { background-color: rgba(32, 201, 151, 0.1) !important; }
+    .text-teal { color: #20c997 !important; }
+
+    .bg-primary-subtle { background-color: rgba(30, 60, 114, 0.1) !important; }
+    .bg-success-subtle { background-color: rgba(25, 135, 84, 0.1) !important; }
+    .bg-warning-subtle { background-color: rgba(255, 193, 7, 0.1) !important; }
+    .bg-danger-subtle { background-color: rgba(220, 53, 69, 0.1) !important; }
+    .bg-info-subtle { background-color: rgba(13, 202, 240, 0.1) !important; }
+    .bg-secondary-subtle { background-color: rgba(108, 117, 125, 0.1) !important; }
+
+    .stat-icon-wrapper {
+        width: 38px;
+        height: 38px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+    }
+</style>

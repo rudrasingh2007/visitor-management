@@ -1,0 +1,194 @@
+@model VisitorManagementSystem.ViewModels.VisitEntryViewModel
+@{
+    ViewData["Title"] = "Visitor Check-In";
+}
+
+<div class="container-fluid px-4 py-4">
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0 bg-transparent p-0">
+            <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index" class="text-decoration-none"><i class="fa-solid fa-house me-1"></i>Home</a></li>
+            <li class="breadcrumb-item text-muted">Visit Management</li>
+            <li class="breadcrumb-item active" aria-current="page">Visitor Check-In</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="mb-4">
+        <h3 class="fw-bold text-dark mb-1"><i class="fa-solid fa-user-check me-2 text-primary"></i>Visitor Check-In</h3>
+        <p class="text-muted mb-0">Select an approved appointment to record visitor arrival and check-in details.</p>
+    </div>
+
+    <!-- Form Card -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4 p-md-5">
+            <form asp-action="CheckIn" method="post" id="checkInForm">
+                @Html.AntiForgeryToken()
+                
+                <div asp-validation-summary="ModelOnly" class="alert alert-danger rounded-3 p-3 mb-4 fs-7" role="alert">
+                    <i class="fa-solid fa-circle-exclamation me-2"></i>Please correct the errors below.
+                </div>
+
+                <div class="row g-3 align-items-end mb-4">
+                    <!-- Appointment Selection -->
+                    <div class="col-12 col-md-8">
+                        <label asp-for="AppointmentId" class="form-label fw-semibold text-secondary">Select Approved Appointment <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <span class="input-group-text bg-light border-end-0 rounded-start-3 text-muted"><i class="fa-solid fa-calendar-check"></i></span>
+                            <select asp-for="AppointmentId" class="form-select border-start-0 rounded-end-3" asp-items="ViewBag.ApprovedAppointments" id="AppointmentId">
+                                <option value="">-- Choose Approved Appointment --</option>
+                            </select>
+                        </div>
+                        <span asp-validation-for="AppointmentId" class="text-danger small mt-1 d-block"></span>
+                    </div>
+                    
+                    <div class="col-12 col-md-4">
+                        <span class="text-muted small"><i class="fa-solid fa-info-circle me-1"></i>Approved appointments list matches today or recent dates.</span>
+                    </div>
+                </div>
+
+                <!-- Auto-Populated Appointment Details Container -->
+                <div id="detailsContainer" style="display: none;">
+                    <div class="row g-4">
+                        <!-- Visitor Details Card -->
+                        <div class="col-12 col-md-6">
+                            <div class="card border-0 bg-light rounded-4 h-100 p-3 shadow-sm border-start border-primary border-4">
+                                <h6 class="fw-bold text-primary mb-3"><i class="fa-solid fa-id-badge me-2"></i>Visitor Information</h6>
+                                <div class="row g-2 small">
+                                    <div class="col-4 text-muted">Full Name:</div>
+                                    <div class="col-8 fw-semibold text-dark" id="txtVisitorName"></div>
+                                    
+                                    <div class="col-4 text-muted">Mobile No:</div>
+                                    <div class="col-8 fw-semibold text-dark" id="txtVisitorMobile"></div>
+                                    
+                                    <div class="col-4 text-muted">Email:</div>
+                                    <div class="col-8 fw-semibold text-dark text-truncate" id="txtVisitorEmail"></div>
+                                    
+                                    <div class="col-4 text-muted">Company:</div>
+                                    <div class="col-8 fw-semibold text-dark" id="txtVisitorCompany"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Employee Details Card -->
+                        <div class="col-12 col-md-6">
+                            <div class="card border-0 bg-light rounded-4 h-100 p-3 shadow-sm border-start border-success border-4">
+                                <h6 class="fw-bold text-success mb-3"><i class="fa-solid fa-user-tie me-2"></i>Host Employee Information</h6>
+                                <div class="row g-2 small">
+                                    <div class="col-4 text-muted">Employee:</div>
+                                    <div class="col-8 fw-semibold text-dark" id="txtEmployeeName"></div>
+                                    
+                                    <div class="col-4 text-muted">Designation:</div>
+                                    <div class="col-8 fw-semibold text-dark" id="txtEmployeeDesignation"></div>
+                                    
+                                    <div class="col-4 text-muted">Department:</div>
+                                    <div class="col-8 fw-semibold text-dark" id="txtDepartmentName"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Appointment details -->
+                        <div class="col-12">
+                            <div class="card border-0 bg-light rounded-4 p-3 shadow-sm border-start border-warning border-4">
+                                <h6 class="fw-bold text-warning mb-2"><i class="fa-solid fa-circle-question me-2"></i>Appointment Schedule & Purpose</h6>
+                                <div class="row g-2 small mb-2">
+                                    <div class="col-12 col-sm-6">
+                                        <span class="text-muted me-1">Scheduled:</span>
+                                        <strong class="text-dark" id="txtScheduleDateTime"></strong>
+                                    </div>
+                                </div>
+                                <span class="text-muted d-block mb-1">Purpose:</span>
+                                <div class="p-2 bg-white rounded text-dark fs-7" id="txtPurpose"></div>
+                            </div>
+                        </div>
+
+                        <!-- Remarks Input -->
+                        <div class="col-12">
+                            <label asp-for="Remarks" class="form-label fw-semibold text-secondary">Check-In Remarks / Notes</label>
+                            <textarea asp-for="Remarks" rows="2" class="form-control rounded-3" placeholder="Enter card number issued, luggage details, or general remarks..."></textarea>
+                            <span asp-validation-for="Remarks" class="text-danger small mt-1 d-block"></span>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex justify-content-end gap-2 mt-5">
+                        <a asp-action="Index" class="btn btn-secondary px-4 py-2 rounded-3 fw-semibold">
+                            <i class="fa-solid fa-xmark me-2"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary px-4 py-2 rounded-3 fw-semibold shadow-sm">
+                            <i class="fa-solid fa-circle-check me-2"></i>Confirm Check-In
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Placeholder when no appointment selected -->
+                <div id="placeholderMessage" class="text-center py-5">
+                    <div class="text-muted mb-2">
+                        <i class="fa-regular fa-folder-open fa-3x mb-3 text-secondary"></i>
+                        <p class="fw-semibold">No Appointment Selected</p>
+                        <p class="small text-muted mx-auto" style="max-width: 400px;">Please choose an approved appointment from the dropdown above to load check-in details.</p>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        $(document).ready(function() {
+            // Function to load appointment details
+            function loadAppointmentDetails(apptId) {
+                if (!apptId) {
+                    $('#detailsContainer').hide();
+                    $('#placeholderMessage').show();
+                    return;
+                }
+
+                // Show spinner or loader if needed
+                $.getJSON('@Url.Action("GetAppointmentDetails", "Visit")', { appointmentId: apptId }, function(data) {
+                    if (data) {
+                        $('#txtVisitorName').text(data.visitorName);
+                        $('#txtVisitorMobile').text(data.visitorMobile);
+                        $('#txtVisitorEmail').text(data.visitorEmail);
+                        $('#txtVisitorCompany').text(data.visitorCompany);
+                        
+                        $('#txtEmployeeName').text(data.employeeName);
+                        $('#txtEmployeeDesignation').text(data.employeeDesignation);
+                        $('#txtDepartmentName').text(data.departmentName);
+                        
+                        $('#txtScheduleDateTime').html('<i class="fa-regular fa-calendar me-1"></i>' + data.appointmentDate + ' at <i class="fa-regular fa-clock me-1"></i>' + data.appointmentTime);
+                        $('#txtPurpose').text(data.purpose);
+
+                        $('#placeholderMessage').hide();
+                        $('#detailsContainer').fadeIn();
+                    } else {
+                        $('#detailsContainer').hide();
+                        $('#placeholderMessage').show();
+                    }
+                });
+            }
+
+            // Bind change event
+            $('#AppointmentId').on('change', function() {
+                loadAppointmentDetails($(this).val());
+            });
+
+            // Initialize on start if pre-populated (e.g. from redirect query string or validation failure)
+            var initialApptId = $('#AppointmentId').val();
+            if (initialApptId) {
+                loadAppointmentDetails(initialApptId);
+            }
+        });
+    </script>
+}
+
+<style>
+    .text-primary { color: #1e3c72 !important; }
+    .bg-light { background-color: #f8f9fa !important; }
+    .border-primary { border-color: #1e3c72 !important; }
+    .border-success { border-color: #198754 !important; }
+    .border-warning { border-color: #ffc107 !important; }
+    .fs-7 { font-size: 0.85rem; }
+</style>

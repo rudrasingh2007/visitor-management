@@ -1,0 +1,215 @@
+@model VisitorManagementSystem.Models.VisitEntryMaster
+@{
+    ViewData["Title"] = "Visit Details";
+    var durationText = "N/A";
+    if (Model.CheckOutTime.HasValue)
+    {
+        var diff = Model.CheckOutTime.Value - Model.CheckInTime;
+        durationText = $"{(int)diff.TotalHours} hours {diff.Minutes} minutes";
+    }
+}
+
+<div class="container-fluid px-4 py-4">
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0 bg-transparent p-0">
+            <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index" class="text-decoration-none"><i class="fa-solid fa-house me-1"></i>Home</a></li>
+            <li class="breadcrumb-item text-muted">Visit Management</li>
+            <li class="breadcrumb-item"><a asp-action="Index" class="text-decoration-none">Visit Entry List</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Visit Details</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h3 class="fw-bold text-dark mb-1"><i class="fa-solid fa-list-check me-2 text-primary"></i>Visit Entry Details</h3>
+            <p class="text-muted mb-0">Review arrival details, check-in/out timestamps, and visitor movement statistics.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a asp-action="Index" class="btn btn-secondary px-4 py-2 rounded-3 fw-semibold">
+                <i class="fa-solid fa-arrow-left me-2"></i>Back to List
+            </a>
+        </div>
+    </div>
+
+    <!-- Visit Grid -->
+    <div class="row g-4">
+        <!-- Main Visit Log Card -->
+        <div class="col-12 col-lg-8">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
+                    <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-clock-rotate-left text-primary me-2"></i>Visit Entry Logs</h5>
+                    <div>
+                        @if (Model.VisitStatus == "Checked In")
+                        {
+                            <span class="badge bg-warning-subtle text-warning px-3 py-2 rounded-pill fs-7"><i class="fa-solid fa-door-open me-1"></i>Checked In</span>
+                        }
+                        else if (Model.VisitStatus == "In Meeting")
+                        {
+                            <span class="badge bg-info-subtle text-info px-3 py-2 rounded-pill fs-7"><i class="fa-solid fa-users me-1"></i>In Meeting</span>
+                        }
+                        else if (Model.VisitStatus == "Completed" || Model.VisitStatus == "Checked Out")
+                        {
+                            <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill fs-7"><i class="fa-solid fa-circle-check me-1"></i>Completed</span>
+                        }
+                    </div>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row g-4">
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <span class="text-muted d-block small uppercase fw-semibold mb-1">Check-In Time</span>
+                            <strong class="text-dark"><i class="fa-solid fa-clock-lock text-success me-1"></i>@Model.CheckInTime.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")</strong>
+                        </div>
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <span class="text-muted d-block small uppercase fw-semibold mb-1">Check-Out Time</span>
+                            <strong class="text-dark">
+                                @if (Model.CheckOutTime.HasValue)
+                                {
+                                    <span><i class="fa-solid fa-clock text-danger me-1"></i>@Model.CheckOutTime.Value.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted font-monospace">-</span>
+                                }
+                            </strong>
+                        </div>
+                        
+                        <div class="col-12 col-sm-6 col-md-4">
+                            <span class="text-muted d-block small uppercase fw-semibold mb-1">Visit Duration</span>
+                            <strong class="text-primary fs-6"><i class="fa-solid fa-hourglass-half me-1"></i>@durationText</strong>
+                        </div>
+
+                        <div class="col-12 col-md-12">
+                            <span class="text-muted d-block small uppercase fw-semibold mb-1">Associated Appointment</span>
+                            <strong class="text-dark">
+                                <a asp-controller="Appointment" asp-action="Details" asp-route-id="@Model.AppointmentId" class="text-decoration-none">
+                                    View Appointment Details (@(Model.Appointment?.AppointmentDate.ToString("dd MMM yyyy") ?? ""))
+                                </a>
+                            </strong>
+                        </div>
+
+                        <div class="col-12">
+                            <hr class="border-secondary border-opacity-10 my-1" />
+                        </div>
+
+                        <!-- Remarks -->
+                        <div class="col-12">
+                            <span class="text-muted d-block small uppercase fw-semibold mb-1">Remarks / Movement Notes</span>
+                            <div class="p-3 bg-light rounded-3 text-dark font-monospace" style="font-size: 0.9rem;">
+                                @(string.IsNullOrWhiteSpace(Model.Remarks) ? "No check-in/out remarks added." : Model.Remarks)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Original Appointment Purpose details -->
+            @if (Model.Appointment != null)
+            {
+                <div class="card border-0 shadow-sm rounded-4">
+                    <div class="card-header bg-transparent border-0 pt-4 px-4">
+                        <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-comment-dots text-primary me-2"></i>Original Purpose of Visit</h6>
+                    </div>
+                    <div class="card-body p-4 pt-2 fs-7">
+                        <div class="p-3 bg-light rounded-3">
+                            @Model.Appointment.Purpose
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Right Side: Visitor & Employee Info Cards -->
+        <div class="col-12 col-lg-4">
+            <!-- Visitor Info -->
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-header bg-transparent border-0 pt-4 px-4">
+                    <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-id-badge text-primary me-2"></i>Visitor Info</h5>
+                </div>
+                <div class="card-body p-4 pt-2">
+                    @if (Model.Visitor != null)
+                    {
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="avatar-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold fs-4 me-3 shadow-sm" style="width: 55px; height: 55px; border-radius: 50%;">
+                                @Model.Visitor.FirstName.Substring(0, Math.Min(2, Model.Visitor.FirstName.Length)).ToUpper()
+                            </div>
+                            <div>
+                                <h6 class="fw-bold text-dark mb-0">@Model.Visitor.FirstName @Model.Visitor.LastName</h6>
+                                <span class="small text-muted">@Model.Visitor.CompanyName</span>
+                            </div>
+                        </div>
+                        <ul class="list-group list-group-flush border-top-0 small">
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 border-secondary border-opacity-10">
+                                <span class="text-muted"><i class="fa-solid fa-phone me-2"></i>Mobile</span>
+                                <strong class="text-dark">@Model.Visitor.MobileNumber</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 border-secondary border-opacity-10">
+                                <span class="text-muted"><i class="fa-solid fa-envelope me-2"></i>Email</span>
+                                <strong class="text-dark text-truncate" style="max-width: 180px;">@Model.Visitor.Email</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 border-secondary border-opacity-10">
+                                <span class="text-muted"><i class="fa-solid fa-address-card me-2"></i>ID Proof</span>
+                                <strong class="text-dark">@Model.Visitor.IdProofType: @Model.Visitor.IdProofNumber</strong>
+                            </li>
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="text-danger mb-0"><i class="fa-solid fa-triangle-exclamation me-1"></i>Visitor details missing.</p>
+                    }
+                </div>
+            </div>
+
+            <!-- Employee Info -->
+            <div class="card border-0 shadow-sm rounded-4">
+                <div class="card-header bg-transparent border-0 pt-4 px-4">
+                    <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-user-tie text-primary me-2"></i>Host Employee</h5>
+                </div>
+                <div class="card-body p-4 pt-2">
+                    @if (Model.Employee != null)
+                    {
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="avatar-circle bg-success-subtle text-success d-flex align-items-center justify-content-center fw-bold fs-4 me-3 shadow-sm" style="width: 55px; height: 55px; border-radius: 50%;">
+                                @Model.Employee.FirstName.Substring(0, Math.Min(2, Model.Employee.FirstName.Length)).ToUpper()
+                            </div>
+                            <div>
+                                <h6 class="fw-bold text-dark mb-0">@Model.Employee.FirstName @Model.Employee.LastName</h6>
+                                <span class="small text-muted">@Model.Employee.Designation</span>
+                            </div>
+                        </div>
+                        <ul class="list-group list-group-flush border-top-0 small">
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 border-secondary border-opacity-10">
+                                <span class="text-muted"><i class="fa-solid fa-sitemap me-2"></i>Department</span>
+                                <strong class="text-dark">@(Model.Department?.DepartmentName ?? "No Dept")</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 border-secondary border-opacity-10">
+                                <span class="text-muted"><i class="fa-solid fa-envelope me-2"></i>Email</span>
+                                <strong class="text-dark text-truncate" style="max-width: 180px;">@Model.Employee.Email</strong>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 border-secondary border-opacity-10">
+                                <span class="text-muted"><i class="fa-solid fa-phone me-2"></i>Mobile</span>
+                                <strong class="text-dark">@Model.Employee.MobileNumber</strong>
+                            </li>
+                        </ul>
+                    }
+                    else
+                    {
+                        <p class="text-danger mb-0"><i class="fa-solid fa-triangle-exclamation me-1"></i>Employee details missing.</p>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-warning-subtle { background-color: rgba(255, 193, 7, 0.1) !important; }
+    .bg-info-subtle { background-color: rgba(13, 202, 240, 0.1) !important; }
+    .bg-success-subtle { background-color: rgba(25, 135, 84, 0.1) !important; }
+    .bg-primary-subtle { background-color: rgba(30, 60, 114, 0.1) !important; }
+    .bg-light { background-color: #f8f9fa !important; }
+    .text-primary { color: #1e3c72 !important; }
+    .fs-7 { font-size: 0.85rem; }
+    .list-group-item { background-color: transparent !important; }
+</style>

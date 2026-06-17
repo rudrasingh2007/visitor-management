@@ -1,0 +1,347 @@
+@model IEnumerable<VisitorManagementSystem.Models.VisitEntryMaster>
+@{
+    ViewData["Title"] = "Visit Entry List";
+}
+
+<div class="container-fluid px-4 py-4">
+    <!-- Breadcrumbs -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb mb-0 bg-transparent p-0">
+            <li class="breadcrumb-item"><a asp-controller="Dashboard" asp-action="Index" class="text-decoration-none"><i class="fa-solid fa-house me-1"></i>Home</a></li>
+            <li class="breadcrumb-item text-muted">Visit Management</li>
+            <li class="breadcrumb-item active" aria-current="page">Visit Entry List</li>
+        </ol>
+    </nav>
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h3 class="fw-bold text-dark mb-1"><i class="fa-solid fa-list-check me-2 text-primary"></i>Visit Entry List</h3>
+            <p class="text-muted mb-0">Monitor visitor check-ins, check-outs, and track visitor logs within the premises.</p>
+        </div>
+        <div>
+            <a asp-action="CheckIn" class="btn btn-primary px-4 py-2 fw-semibold shadow-sm">
+                <i class="fa-solid fa-user-check me-2"></i>New Check-In
+            </a>
+        </div>
+    </div>
+
+    <!-- Alert Messages -->
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fa-solid fa-circle-check me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" onclick="$(this).closest('.alert').remove()"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="fa-solid fa-circle-exclamation me-2"></i>@TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close" onclick="$(this).closest('.alert').remove()"></button>
+        </div>
+    }
+
+    <!-- Advanced Filters Card -->
+    <div class="card border-0 shadow-sm rounded-4 mb-4">
+        <div class="card-body p-4">
+            <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-sliders text-primary me-2"></i>Filter Visits</h6>
+            <div class="row g-3">
+                <!-- Status Filter -->
+                <div class="col-12 col-sm-6 col-md-3 col-lg-2">
+                    <label class="form-label fw-semibold text-muted small mb-1">Status</label>
+                    <select id="statusFilter" class="form-select rounded-2">
+                        <option value="">All Statuses</option>
+                        <option value="Checked In">Checked In</option>
+                        <option value="In Meeting">In Meeting</option>
+                        <option value="Completed">Completed</option>
+                    </select>
+                </div>
+                <!-- Department Filter -->
+                <div class="col-12 col-sm-6 col-md-3 col-lg-2">
+                    <label class="form-label fw-semibold text-muted small mb-1">Department</label>
+                    <select id="deptFilter" class="form-select rounded-2" asp-items="ViewBag.DepartmentsList">
+                        <option value="">All Departments</option>
+                    </select>
+                </div>
+                <!-- Visitor Filter -->
+                <div class="col-12 col-sm-6 col-md-3 col-lg-2">
+                    <label class="form-label fw-semibold text-muted small mb-1">Visitor</label>
+                    <select id="visitorFilter" class="form-select rounded-2" asp-items="ViewBag.VisitorsList">
+                        <option value="">All Visitors</option>
+                    </select>
+                </div>
+                <!-- Employee Filter -->
+                <div class="col-12 col-sm-6 col-md-3 col-lg-2">
+                    <label class="form-label fw-semibold text-muted small mb-1">Employee Host</label>
+                    <select id="employeeFilter" class="form-select rounded-2" asp-items="ViewBag.EmployeesList">
+                        <option value="">All Employees</option>
+                    </select>
+                </div>
+                <!-- Check-in Date Filter -->
+                <div class="col-12 col-sm-6 col-md-3 col-lg-2">
+                    <label class="form-label fw-semibold text-muted small mb-1">Check-In Date</label>
+                    <input type="date" id="dateFilter" class="form-control rounded-2" />
+                </div>
+            </div>
+            <!-- Reset Button -->
+            <div class="d-flex justify-content-end mt-3">
+                <button type="button" id="btnResetFilters" class="btn btn-sm btn-outline-secondary rounded-2">
+                    <i class="fa-solid fa-arrow-rotate-left me-1"></i>Reset Filters
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table Card -->
+    <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle" id="visitsTable" style="width: 100%;">
+                    <thead class="table-light text-muted uppercase fs-7 fw-semibold">
+                        <tr>
+                            <th>Visitor Name</th>
+                            <th>Department</th>
+                            <th>Employee Host</th>
+                            <th>Check-In Time</th>
+                            <th>Check-Out Time</th>
+                            <th>Duration</th>
+                            <th>Status</th>
+                            <th class="text-end" style="min-width: 150px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            var durationText = "N/A";
+                            if (item.CheckOutTime.HasValue)
+                            {
+                                var diff = item.CheckOutTime.Value - item.CheckInTime;
+                                durationText = $"{(int)diff.TotalHours}h {diff.Minutes}m";
+                            }
+                            <tr>
+                                <td class="fw-semibold">@(item.Visitor != null ? $"{item.Visitor.FirstName} {item.Visitor.LastName}" : "Unknown Visitor")</td>
+                                <td><span class="badge bg-secondary-subtle text-secondary px-2 py-1 fs-8">@(item.Department?.DepartmentName ?? "No Dept")</span></td>
+                                <td>@(item.Employee != null ? $"{item.Employee.FirstName} {item.Employee.LastName}" : "Unknown Employee")</td>
+                                <td class="visit-date" data-date="@item.CheckInTime.ToLocalTime().ToString("yyyy-MM-dd")" data-order="@item.CheckInTime.ToString("yyyyMMddHHmmss")">
+                                    @item.CheckInTime.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")
+                                </td>
+                                <td>
+                                    @(item.CheckOutTime.HasValue ? item.CheckOutTime.Value.ToLocalTime().ToString("dd MMM yyyy hh:mm tt") : "-")
+                                </td>
+                                <td class="fw-bold text-secondary fs-8">@durationText</td>
+                                <td>
+                                    @if (item.VisitStatus == "Checked In")
+                                    {
+                                        <span class="badge bg-warning-subtle text-warning px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-door-open me-1"></i>Checked In</span>
+                                    }
+                                    else if (item.VisitStatus == "In Meeting")
+                                    {
+                                        <span class="badge bg-info-subtle text-info px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-users me-1"></i>In Meeting</span>
+                                    }
+                                    else if (item.VisitStatus == "Completed" || item.VisitStatus == "Checked Out")
+                                    {
+                                        <span class="badge bg-success-subtle text-success px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-circle-check me-1"></i>Completed</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <!-- Details Button -->
+                                    <a asp-action="Details" asp-route-id="@item.VisitEntryId" class="btn btn-sm btn-outline-info me-1 rounded-2" title="View Details">
+                                        <i class="fa-solid fa-circle-info"></i>
+                                    </a>
+
+                                    @if (item.VisitStatus == "Checked In")
+                                    {
+                                        <!-- Start Meeting Form -->
+                                        <form asp-action="StartMeeting" asp-route-id="@item.VisitEntryId" method="post" style="display:inline;">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-success me-1 rounded-2" title="Visitor Entering Meeting">
+                                                <i class="fa-solid fa-handshake"></i>
+                                            </button>
+                                        </form>
+                                    }
+
+                                    @if (item.VisitStatus == "Checked In" || item.VisitStatus == "In Meeting")
+                                    {
+                                        <!-- Check-Out trigger button -->
+                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-2 btn-trigger-checkout" 
+                                                data-id="@item.VisitEntryId" 
+                                                data-visitor="@(item.Visitor != null ? $"{item.Visitor.FirstName} {item.Visitor.LastName}" : "")"
+                                                data-employee="@(item.Employee != null ? $"{item.Employee.FirstName} {item.Employee.LastName}" : "")"
+                                                title="Check-Out Visitor">
+                                            <i class="fa-solid fa-right-from-bracket"></i>
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Confirm Check-Out -->
+<div class="modal fade" id="checkOutModal" tabindex="-1" aria-labelledby="checkOutModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header border-0 pb-0">
+                <h5 class="modal-title fw-bold text-dark" id="checkOutModalLabel"><i class="fa-solid fa-right-from-bracket text-danger me-2"></i>Visitor Check-Out</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="checkOutForm" method="post" asp-action="CheckOut">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" id="checkOutVisitId" />
+                <div class="modal-body py-3">
+                    <p class="mb-3 text-muted">Please record visitor check-out logs and remarks before finishing the visit record.</p>
+                    <div class="p-3 bg-light rounded-3 mb-3 small">
+                        <strong class="text-dark">Visitor Name: </strong><span id="checkOutVisitorName" class="fw-semibold text-primary"></span><br/>
+                        <strong class="text-dark">Host Employee: </strong><span id="checkOutEmployeeName" class="fw-semibold text-primary"></span>
+                    </div>
+                    <div class="mb-2">
+                        <label class="form-label fw-semibold text-secondary small">Check-Out Remarks</label>
+                        <textarea class="form-control rounded-2 fs-7" name="checkoutRemarks" rows="2" placeholder="e.g. Card returned, visit concluded successfully..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer border-0 pt-0">
+                    <button type="button" class="btn btn-secondary px-3 py-2 rounded-2" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-danger px-3 py-2 rounded-2 fw-semibold">Confirm Check-Out</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Initialize DataTable
+            var table = $('#visitsTable').DataTable({
+                "paging": true,
+                "lengthChange": true,
+                "searching": true,
+                "ordering": true,
+                "info": true,
+                "autoWidth": false,
+                "responsive": true,
+                "language": {
+                    "search": "_INPUT_",
+                    "searchPlaceholder": "Search visits..."
+                },
+                "order": [[3, "desc"]], // Sort by Check-In Time desc
+                "buttons": [
+                    {
+                        extend: 'excel',
+                        className: 'btn btn-sm btn-outline-success me-1 rounded-2',
+                        text: '<i class="fa-solid fa-file-excel me-1"></i> Excel',
+                        exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6] }
+                    },
+                    {
+                        extend: 'pdf',
+                        className: 'btn btn-sm btn-outline-danger me-1 rounded-2',
+                        text: '<i class="fa-solid fa-file-pdf me-1"></i> PDF',
+                        exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6] }
+                    },
+                    {
+                        extend: 'print',
+                        className: 'btn btn-sm btn-outline-secondary rounded-2',
+                        text: '<i class="fa-solid fa-print me-1"></i> Print',
+                        exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6] }
+                    }
+                ],
+                "dom": "<'row mb-3'<'col-sm-12 col-md-6'lB><'col-sm-12 col-md-6'f>>" +
+                       "<'row'<'col-sm-12'tr>>" +
+                       "<'row mt-3'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>"
+            });
+
+            // Status Filter Dropdown
+            $('#statusFilter').on('change', function() {
+                var val = $(this).val();
+                table.column(6).search(val ? '^\\s*' + val + '\\s*$' : '', true, false).draw();
+            });
+
+            // Department Filter Dropdown
+            $('#deptFilter').on('change', function() {
+                var val = $(this).val();
+                table.column(1).search(val ? '^\\s*' + val + '\\s*$' : '', true, false).draw();
+            });
+
+            // Visitor Filter Dropdown
+            $('#visitorFilter').on('change', function() {
+                var val = $(this).val();
+                table.column(0).search(val ? '^\\s*' + val + '\\s*$' : '', true, false).draw();
+            });
+
+            // Employee Filter Dropdown
+            $('#employeeFilter').on('change', function() {
+                var val = $(this).val();
+                table.column(2).search(val ? '^\\s*' + val + '\\s*$' : '', true, false).draw();
+            });
+
+            // Custom search plugin to filter rows by check-in date
+            $.fn.dataTable.ext.search.push(
+                function(settings, data, dataIndex) {
+                    var filterDate = $('#dateFilter').val(); // YYYY-MM-DD
+                    if (!filterDate) {
+                        return true;
+                    }
+                    
+                    var rowDateStr = $(table.row(dataIndex).node()).find('td.visit-date').attr('data-date');
+                    return rowDateStr === filterDate;
+                }
+            );
+
+            // Re-draw table when date filter changes
+            $('#dateFilter').on('change', function() {
+                table.draw();
+            });
+
+            // Reset filters logic
+            $('#btnResetFilters').click(function() {
+                $('#statusFilter').val('');
+                $('#deptFilter').val('');
+                $('#visitorFilter').val('');
+                $('#employeeFilter').val('');
+                $('#dateFilter').val('');
+                
+                table.columns().search('').draw();
+                table.draw();
+            });
+
+            // Trigger Check-Out confirmation Modal
+            $(document).on('click', '.btn-trigger-checkout', function() {
+                var visitId = $(this).data('id');
+                var visitorName = $(this).data('visitor');
+                var employeeName = $(this).data('employee');
+                
+                $('#checkOutVisitId').val(visitId);
+                $('#checkOutVisitorName').text(visitorName);
+                $('#checkOutEmployeeName').text(employeeName);
+                
+                var myModal = new bootstrap.Modal(document.getElementById('checkOutModal'));
+                myModal.show();
+            });
+        });
+    </script>
+}
+
+<style>
+    .bg-warning-subtle { background-color: rgba(255, 193, 7, 0.1) !important; }
+    .bg-info-subtle { background-color: rgba(13, 202, 240, 0.1) !important; }
+    .bg-success-subtle { background-color: rgba(25, 135, 84, 0.1) !important; }
+    .bg-secondary-subtle { background-color: rgba(108, 117, 125, 0.1) !important; }
+    .text-primary { color: #1e3c72 !important; }
+    .fs-7 { font-size: 0.85rem; }
+    .fs-8 { font-size: 0.75rem; }
+    .dataTables_filter input {
+        border-radius: 6px;
+        border: 1px solid #ced4da;
+        padding: 6px 12px;
+    }
+    .dataTables_length select {
+        border-radius: 6px;
+        border: 1px solid #ced4da;
+        padding: 6px 12px;
+    }
+</style>

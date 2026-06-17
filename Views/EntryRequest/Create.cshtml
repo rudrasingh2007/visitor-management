@@ -1,0 +1,100 @@
+@model VisitorManagementSystem.ViewModels.EntryRequestViewModel
+@{
+    ViewData["Title"] = "Create Entry Request";
+}
+
+<div class="container px-4 py-4" style="max-width: 800px;">
+    <div class="d-flex align-items-center mb-4">
+        <a asp-action="Index" class="btn btn-outline-secondary border-0 btn-sm me-3"><i class="fa-solid fa-arrow-left fa-lg"></i></a>
+        <div>
+            <h3 class="fw-bold text-dark mb-0">New Entry Request</h3>
+            <p class="text-muted small mb-0">Create an approval request for an arriving visitor at the gate.</p>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-4 p-4 bg-white">
+        <form asp-action="Create" method="post" autocomplete="off">
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <div class="row g-3">
+                <!-- Visitor Selection -->
+                <div class="col-12">
+                    <label asp-for="VisitorId" class="form-label fw-semibold">Select Visitor</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-user text-muted"></i></span>
+                        <select asp-for="VisitorId" class="form-select border-start-0" asp-items="ViewBag.VisitorsList" required>
+                            <option value="">-- Choose Visitor --</option>
+                        </select>
+                    </div>
+                    <span asp-validation-for="VisitorId" class="text-danger small"></span>
+                </div>
+
+                <!-- Department Selection -->
+                <div class="col-12 col-md-6">
+                    <label asp-for="DepartmentId" class="form-label fw-semibold">Select Department</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-sitemap text-muted"></i></span>
+                        <select asp-for="DepartmentId" class="form-select border-start-0" id="departmentSelect" asp-items="ViewBag.DepartmentsList" required>
+                            <option value="">-- Choose Department --</option>
+                        </select>
+                    </div>
+                    <span asp-validation-for="DepartmentId" class="text-danger small"></span>
+                </div>
+
+                <!-- Employee Selection -->
+                <div class="col-12 col-md-6">
+                    <label asp-for="EmployeeId" class="form-label fw-semibold">Select Employee to Meet</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-user-tie text-muted"></i></span>
+                        <select asp-for="EmployeeId" class="form-select border-start-0" id="employeeSelect" asp-items="ViewBag.EmployeesList" required>
+                            <option value="">-- Choose Employee --</option>
+                        </select>
+                    </div>
+                    <span asp-validation-for="EmployeeId" class="text-danger small"></span>
+                </div>
+
+                <!-- Purpose -->
+                <div class="col-12">
+                    <label asp-for="Purpose" class="form-label fw-semibold">Purpose of Visit</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-light border-end-0"><i class="fa-solid fa-message text-muted"></i></span>
+                        <input asp-for="Purpose" class="form-control border-start-0" placeholder="Enter reason for visit (e.g. Interview, Business Meeting)" required />
+                    </div>
+                    <span asp-validation-for="Purpose" class="text-danger small"></span>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="col-12 mt-4 text-end">
+                    <a asp-action="Index" class="btn btn-light px-4 rounded-3 me-2">Cancel</a>
+                    <button type="submit" class="btn btn-primary px-5 rounded-3">Submit Request</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Cascade Dropdown: load employees based on department selection
+            $('#departmentSelect').change(function () {
+                var departmentId = $(this).val();
+                var $employeeSelect = $('#employeeSelect');
+                
+                $employeeSelect.empty();
+                $employeeSelect.append('<option value="">-- Choose Employee --</option>');
+                
+                if (departmentId) {
+                    $.getJSON('/EntryRequest/GetEmployeesByDepartment', { departmentId: departmentId }, function (data) {
+                        $.each(data, function (index, item) {
+                            $employeeSelect.append($('<option>', {
+                                value: item.value,
+                                text: item.text
+                            }));
+                        });
+                    });
+                }
+            });
+        });
+    </script>
+}
