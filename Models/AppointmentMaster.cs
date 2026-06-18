@@ -53,9 +53,9 @@ namespace VisitorManagementSystem.Models
         public string? Remarks { get; set; }
 
         [Required(ErrorMessage = "Status is required.")]
-        [StringLength(15, ErrorMessage = "Status cannot exceed 15 characters.")]
+        [StringLength(25, ErrorMessage = "Status cannot exceed 25 characters.")]
         [Column("Status")]
-        public string Status { get; set; } = "Pending"; // Pending, Approved, Rejected, Cancelled, Completed
+        public string Status { get; set; } = "Approved"; // Approved, Checked In, Checked Out, Rejected
 
         [Required]
         [Column("CreatedDate")]

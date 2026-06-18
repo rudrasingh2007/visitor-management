@@ -63,7 +63,7 @@ namespace VisitorManagementSystem.Controllers
                 var isDuplicate = await _context.EntryRequestMasters.AnyAsync(r =>
                     r.VisitorId == model.VisitorId &&
                     r.EmployeeId == model.EmployeeId &&
-                    r.ApprovalStatus == "Pending");
+                    r.ApprovalStatus == "Pending Approval");
 
                 if (isDuplicate)
                 {
@@ -80,7 +80,7 @@ namespace VisitorManagementSystem.Controllers
                     DepartmentId = model.DepartmentId,
                     EmployeeId = model.EmployeeId,
                     Purpose = model.Purpose.Trim(),
-                    ApprovalStatus = "Pending",
+                    ApprovalStatus = "Pending Approval",
                     CreatedByUserId = userId,
                     RequestDateTime = DateTime.UtcNow,
                     CreatedDate = DateTime.UtcNow
@@ -112,7 +112,7 @@ namespace VisitorManagementSystem.Controllers
                 .Include(r => r.Visitor)
                 .Include(r => r.Department)
                 .Include(r => r.Employee)
-                .Where(r => r.EmployeeId == employeeId && r.ApprovalStatus == "Pending")
+                .Where(r => r.EmployeeId == employeeId && r.ApprovalStatus == "Pending Approval")
                 .OrderByDescending(r => r.RequestDateTime)
                 .ToListAsync();
 
@@ -134,7 +134,7 @@ namespace VisitorManagementSystem.Controllers
                 .Include(r => r.Visitor)
                 .Include(r => r.Department)
                 .Include(r => r.Employee)
-                .Where(r => r.EmployeeId == employeeId && r.ApprovalStatus != "Pending")
+                .Where(r => r.EmployeeId == employeeId && r.ApprovalStatus != "Pending Approval")
                 .OrderByDescending(r => r.ApprovalDateTime)
                 .ToListAsync();
 
@@ -160,7 +160,7 @@ namespace VisitorManagementSystem.Controllers
                 return RedirectToAction(nameof(Pending));
             }
 
-            if (request.ApprovalStatus != "Pending")
+            if (request.ApprovalStatus != "Pending Approval")
             {
                 TempData["ErrorMessage"] = "This request has already been processed.";
                 return RedirectToAction(nameof(Pending));
@@ -203,9 +203,11 @@ namespace VisitorManagementSystem.Controllers
             // 2. Create QR Code payload
             var qrPayload = $"Pass No: {gatePassNumber}\n" +
                             $"Visitor: {visitorName}\n" +
+                            $"Visitor ID: {request.VisitorId}\n" +
                             $"Host: {employeeName}\n" +
-                            $"Purpose: {request.Purpose}\n" +
-                            $"Approval Time: {request.ApprovalDateTime?.ToLocalTime():dd-MM-yyyy hh:mm tt}";
+                            $"Check-In: Pending Check-In\n" +
+                            $"Status: Approved\n" +
+                            $"Link: http://localhost:5000/GatePass/Verify?number={gatePassNumber}";
 
             // 3. Generate QR Code image file automatically using QRCoder (PNG Byte helper)
             string qrCodePath = string.Empty;
@@ -237,9 +239,9 @@ namespace VisitorManagementSystem.Controllers
                 EmployeeId = request.EmployeeId,
                 DepartmentId = request.DepartmentId,
                 IssueDateTime = DateTime.UtcNow,
-                ExpiryDateTime = DateTime.UtcNow.AddHours(12), // 12 Hour expiry
+                ExpiryDateTime = DateTime.UtcNow.AddHours(24), // 24 Hour expiry
                 QRCodePath = qrCodePath,
-                Status = "Active",
+                Status = "Approved",
                 CreatedDate = DateTime.UtcNow
             };
 
@@ -284,7 +286,7 @@ namespace VisitorManagementSystem.Controllers
                 return RedirectToAction(nameof(Pending));
             }
 
-            if (request.ApprovalStatus != "Pending")
+            if (request.ApprovalStatus != "Pending Approval")
             {
                 TempData["ErrorMessage"] = "This request has already been processed.";
                 return RedirectToAction(nameof(Pending));

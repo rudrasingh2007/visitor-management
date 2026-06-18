@@ -72,8 +72,7 @@
                     <select id="statusFilter" class="form-select rounded-2">
                         <option value="">All Statuses</option>
                         <option value="Checked In">Checked In</option>
-                        <option value="In Meeting">In Meeting</option>
-                        <option value="Completed">Completed</option>
+                        <option value="Checked Out">Checked Out</option>
                     </select>
                 </div>
                 <!-- Department Filter -->
@@ -155,13 +154,9 @@
                                     {
                                         <span class="badge bg-warning-subtle text-warning px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-door-open me-1"></i>Checked In</span>
                                     }
-                                    else if (item.VisitStatus == "In Meeting")
+                                    else if (item.VisitStatus == "Checked Out")
                                     {
-                                        <span class="badge bg-info-subtle text-info px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-users me-1"></i>In Meeting</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-success-subtle text-success px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-circle-check me-1"></i>Completed</span>
+                                        <span class="badge bg-success-subtle text-success px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-circle-check me-1"></i>Checked Out</span>
                                     }
                                 </td>
                             </tr>

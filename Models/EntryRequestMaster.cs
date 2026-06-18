@@ -42,9 +42,9 @@ namespace VisitorManagementSystem.Models
         public DateTime RequestDateTime { get; set; } = DateTime.UtcNow;
 
         [Required]
-        [StringLength(15)]
+        [StringLength(25)]
         [Column("ApprovalStatus")]
-        public string ApprovalStatus { get; set; } = "Pending"; // Pending, Approved, Rejected
+        public string ApprovalStatus { get; set; } = "Pending Approval"; // Pending Approval, Approved, Rejected
 
         [StringLength(500)]
         [Column("ApprovalRemarks")]

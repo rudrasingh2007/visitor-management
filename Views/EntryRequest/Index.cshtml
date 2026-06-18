@@ -57,8 +57,8 @@
                             <td>
                                 @switch (request.ApprovalStatus)
                                 {
-                                    case "Pending":
-                                        <span class="badge bg-warning-subtle text-warning px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-hourglass-half me-1"></i>Pending</span>
+                                    case "Pending Approval":
+                                        <span class="badge bg-warning-subtle text-warning px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-hourglass-half me-1"></i>Pending Approval</span>
                                         break;
                                     case "Approved":
                                         <span class="badge bg-success-subtle text-success px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-circle-check me-1"></i>Approved</span>
@@ -76,17 +76,29 @@
                                 @if (request.ApprovalStatus == "Approved")
                                 {
                                     var gp = request.GatePasses.FirstOrDefault();
-                                    if (gp != null && gp.VisitEntryId == null)
-                                    {
-                                        <a asp-controller="Visit" asp-action="CheckIn" class="btn btn-sm btn-outline-success rounded-pill px-3 me-1">
-                                            <i class="fa-solid fa-user-check me-1"></i>Check-In
-                                        </a>
-                                    }
                                     if (gp != null)
                                     {
-                                        <a asp-controller="GatePass" asp-action="Print" asp-route-id="@gp.GatePassId" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-3">
-                                            <i class="fa-solid fa-print me-1"></i>Print Pass
-                                        </a>
+                                        @if (gp.Status == "Approved")
+                                        {
+                                            <a asp-controller="Visit" asp-action="CheckIn" class="btn btn-sm btn-outline-success rounded-pill px-3 me-1">
+                                                <i class="fa-solid fa-user-check me-1"></i>Check-In
+                                            </a>
+                                            <a asp-controller="GatePass" asp-action="Print" asp-route-id="@gp.GatePassId" target="_blank" class="btn btn-sm btn-outline-primary rounded-pill px-3">
+                                                <i class="fa-solid fa-print me-1"></i>Print Pass
+                                            </a>
+                                        }
+                                        else if (gp.Status == "Checked In")
+                                        {
+                                            <a asp-controller="GatePass" asp-action="Print" asp-route-id="@gp.GatePassId" target="_blank" class="btn btn-sm btn-outline-warning rounded-pill px-3">
+                                                <i class="fa-solid fa-print me-1"></i>Reprint Pass
+                                            </a>
+                                        }
+                                        else if (gp.Status == "Checked Out")
+                                        {
+                                            <a asp-controller="GatePass" asp-action="Details" asp-route-id="@gp.GatePassId" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                                                <i class="fa-solid fa-eye me-1"></i>View Pass
+                                            </a>
+                                        }
                                     }
                                 }
                                 else

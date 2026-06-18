@@ -156,13 +156,9 @@
                                                     {
                                                         <span class="badge bg-warning-subtle text-warning rounded-pill px-2 py-1 fs-8">Checked In</span>
                                                     }
-                                                    else if (visit.VisitStatus == "In Meeting")
+                                                    else if (visit.VisitStatus == "Checked Out")
                                                     {
-                                                        <span class="badge bg-info-subtle text-info rounded-pill px-2 py-1 fs-8">In Meeting</span>
-                                                    }
-                                                    else
-                                                    {
-                                                        <span class="badge bg-success-subtle text-success rounded-pill px-2 py-1 fs-8">Completed</span>
+                                                        <span class="badge bg-success-subtle text-success rounded-pill px-2 py-1 fs-8">Checked Out</span>
                                                     }
                                                 </td>
                                                 <td class="text-truncate" style="max-width: 120px;" title="@visit.Remarks">@(visit.Remarks ?? "-")</td>
@@ -213,9 +209,9 @@
                                                     {
                                                         <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-1 fs-8">Cancelled</span>
                                                     }
-                                                    else
+                                                    else if (appt.Status == "Checked Out")
                                                     {
-                                                        <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-1 fs-8">Completed</span>
+                                                        <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-1 fs-8">Checked Out</span>
                                                     }
                                                 </td>
                                                 <td class="text-truncate" style="max-width: 150px;" title="@appt.Purpose">@appt.Purpose</td>

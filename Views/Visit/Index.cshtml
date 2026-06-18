@@ -53,8 +53,7 @@
                     <select id="statusFilter" class="form-select rounded-2">
                         <option value="">All Statuses</option>
                         <option value="Checked In">Checked In</option>
-                        <option value="In Meeting">In Meeting</option>
-                        <option value="Completed">Completed</option>
+                        <option value="Checked Out">Checked Out</option>
                     </select>
                 </div>
                 <!-- Department Filter -->
@@ -131,48 +130,33 @@
                                 </td>
                                 <td class="fw-bold text-secondary fs-8">@durationText</td>
                                 <td>
-                                    @if (item.VisitStatus == "Checked In")
-                                    {
-                                        <span class="badge bg-warning-subtle text-warning px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-door-open me-1"></i>Checked In</span>
-                                    }
-                                    else if (item.VisitStatus == "In Meeting")
-                                    {
-                                        <span class="badge bg-info-subtle text-info px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-users me-1"></i>In Meeting</span>
-                                    }
-                                    else if (item.VisitStatus == "Completed" || item.VisitStatus == "Checked Out")
-                                    {
-                                        <span class="badge bg-success-subtle text-success px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-circle-check me-1"></i>Completed</span>
-                                    }
-                                </td>
-                                <td class="text-end">
-                                    <!-- Details Button -->
-                                    <a asp-action="Details" asp-route-id="@item.VisitEntryId" class="btn btn-sm btn-outline-info me-1 rounded-2" title="View Details">
-                                        <i class="fa-solid fa-circle-info"></i>
-                                    </a>
-
-                                    @if (item.VisitStatus == "Checked In")
-                                    {
-                                        <!-- Start Meeting Form -->
-                                        <form asp-action="StartMeeting" asp-route-id="@item.VisitEntryId" method="post" style="display:inline;">
-                                            @Html.AntiForgeryToken()
-                                            <button type="submit" class="btn btn-sm btn-outline-success me-1 rounded-2" title="Visitor Entering Meeting">
-                                                <i class="fa-solid fa-handshake"></i>
-                                            </button>
-                                        </form>
-                                    }
-
-                                    @if (item.VisitStatus == "Checked In" || item.VisitStatus == "In Meeting")
-                                    {
-                                        <!-- Check-Out trigger button -->
-                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-2 btn-trigger-checkout" 
-                                                data-id="@item.VisitEntryId" 
-                                                data-visitor="@(item.Visitor != null ? $"{item.Visitor.FirstName} {item.Visitor.LastName}" : "")"
-                                                data-employee="@(item.Employee != null ? $"{item.Employee.FirstName} {item.Employee.LastName}" : "")"
-                                                title="Check-Out Visitor">
-                                            <i class="fa-solid fa-right-from-bracket"></i>
-                                        </button>
-                                    }
-                                </td>
+                                     @if (item.VisitStatus == "Checked In")
+                                     {
+                                         <span class="badge bg-warning-subtle text-warning px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-door-open me-1"></i>Checked In</span>
+                                     }
+                                     else if (item.VisitStatus == "Checked Out")
+                                     {
+                                         <span class="badge bg-success-subtle text-success px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-circle-check me-1"></i>Checked Out</span>
+                                     }
+                                 </td>
+                                 <td class="text-end">
+                                     <!-- Details Button -->
+                                     <a asp-action="Details" asp-route-id="@item.VisitEntryId" class="btn btn-sm btn-outline-info me-1 rounded-2" title="View Details">
+                                         <i class="fa-solid fa-circle-info"></i>
+                                     </a>
+ 
+                                     @if (item.VisitStatus == "Checked In")
+                                     {
+                                         <!-- Check-Out trigger button -->
+                                         <button type="button" class="btn btn-sm btn-outline-danger rounded-2 btn-trigger-checkout" 
+                                                 data-id="@item.VisitEntryId" 
+                                                 data-visitor="@(item.Visitor != null ? $"{item.Visitor.FirstName} {item.Visitor.LastName}" : "")"
+                                                 data-employee="@(item.Employee != null ? $"{item.Employee.FirstName} {item.Employee.LastName}" : "")"
+                                                 title="Check-Out Visitor">
+                                             <i class="fa-solid fa-right-from-bracket"></i>
+                                         </button>
+                                     }
+                                 </td>
                             </tr>
                         }
                     </tbody>

@@ -55,7 +55,7 @@ namespace VisitorManagementSystem.Controllers
             var approved = await _context.AppointmentMasters.CountAsync(a => a.Status == "Approved");
             var rejected = await _context.AppointmentMasters.CountAsync(a => a.Status == "Rejected");
             var cancelled = await _context.AppointmentMasters.CountAsync(a => a.Status == "Cancelled");
-            var completed = await _context.AppointmentMasters.CountAsync(a => a.Status == "Completed");
+            var completed = await _context.AppointmentMasters.CountAsync(a => a.Status == "Checked Out");
 
             var appointments = await _context.AppointmentMasters
                 .Include(a => a.Visitor)
@@ -86,7 +86,7 @@ namespace VisitorManagementSystem.Controllers
         {
             var total = await _context.VisitEntryMasters.CountAsync();
             var checkouts = await _context.VisitEntryMasters.CountAsync(v => v.CheckOutTime != null);
-            var activeInside = await _context.VisitEntryMasters.CountAsync(v => v.CheckOutTime == null && (v.VisitStatus == "Checked In" || v.VisitStatus == "In Meeting"));
+            var activeInside = await _context.VisitEntryMasters.CountAsync(v => v.VisitStatus == "Checked In");
 
             var visits = await _context.VisitEntryMasters
                 .Include(v => v.Visitor)
@@ -123,6 +123,7 @@ namespace VisitorManagementSystem.Controllers
                 .Include(g => g.Visitor)
                 .Include(g => g.Employee)
                 .Include(g => g.Department)
+                .Include(g => g.VisitEntry)
                 .OrderByDescending(g => g.IssueDateTime)
                 .ToListAsync();
 

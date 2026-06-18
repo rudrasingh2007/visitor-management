@@ -65,7 +65,7 @@ namespace VisitorManagementSystem.Models
         [Required(ErrorMessage = "Status is required.")]
         [StringLength(15, ErrorMessage = "Status cannot exceed 15 characters.")]
         [Column("Status")]
-        public string Status { get; set; } = "Active"; // Active, Expired, Closed
+        public string Status { get; set; } = "Approved"; // Approved, Checked In, Checked Out
 
         [Required]
         [Column("CreatedDate")]

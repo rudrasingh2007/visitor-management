@@ -1,0 +1,209 @@
+@model VisitorManagementSystem.Models.GatePassMaster
+@{
+    Layout = null;
+    var status = ViewBag.Status as string ?? "Invalid";
+    var message = ViewBag.Message as string ?? "PASS CLOSED / INVALID";
+    var isPassed = status == "Valid";
+}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gate Pass Verification</title>
+    <!-- Bootstrap CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+    <style>
+        body {
+            background-color: #f3f4f6;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .verify-card {
+            max-width: 500px;
+            width: 100%;
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            border: none;
+        }
+
+        .status-header {
+            padding: 30px 20px;
+            text-align: center;
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 1.5rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .status-header.valid {
+            background: linear-gradient(135deg, #10b981, #059669);
+        }
+
+        .status-header.invalid {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .status-icon {
+            font-size: 3.5rem;
+            margin-bottom: 15px;
+            animation: pulse 2s infinite;
+        }
+
+        .visitor-photo-box {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            border: 4px solid #ffffff;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            object-fit: cover;
+            margin: -60px auto 15px auto;
+            display: block;
+            background: #f8fafc;
+        }
+
+        .info-label {
+            font-size: 0.75rem;
+            color: #64748b;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .info-value {
+            font-size: 0.95rem;
+            color: #1e293b;
+            font-weight: 700;
+        }
+
+        .badge-status {
+            font-size: 0.8rem;
+            padding: 6px 16px;
+            border-radius: 50px;
+            font-weight: 700;
+            display: inline-block;
+        }
+
+        @@keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+            100% { transform: scale(1); }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="verify-card">
+        <!-- Status Header -->
+        <div class="status-header @(isPassed ? "valid" : "invalid")">
+            <div class="status-icon">
+                @if (isPassed)
+                {
+                    <i class="fa-solid fa-circle-check"></i>
+                }
+                else
+                {
+                    <i class="fa-solid fa-circle-xmark"></i>
+                }
+            </div>
+            @message
+        </div>
+
+        <div class="card-body p-4 pt-5 position-relative">
+            <!-- Visitor Photo -->
+            @if (Model?.Visitor != null && !string.IsNullOrEmpty(Model.Visitor.PhotoPath))
+            {
+                <img src="@Model.Visitor.PhotoPath" class="visitor-photo-box" alt="Visitor Photo" />
+            }
+            else
+            {
+                <div class="visitor-photo-box d-flex align-items-center justify-content-center text-muted" style="font-size: 2.5rem;">
+                    <i class="fa-solid fa-user"></i>
+                </div>
+            }
+
+            @if (Model != null)
+            {
+                <h4 class="text-center fw-bold text-dark mb-1">@(Model.Visitor?.FirstName + " " + Model.Visitor?.LastName)</h4>
+                <p class="text-center text-muted small mb-4">@(Model.Visitor?.CompanyName ?? "Individual Visitor")</p>
+
+                <div class="row g-3">
+                    <div class="col-6">
+                        <span class="info-label d-block">Pass Number</span>
+                        <span class="info-value text-primary font-monospace">@Model.GatePassNumber</span>
+                    </div>
+                    <div class="col-6">
+                        <span class="info-label d-block">Current Status</span>
+                        <div>
+                            @if (Model.Status == "Approved")
+                            {
+                                <span class="badge-status bg-info-subtle text-info"><i class="fa-solid fa-circle-check me-1"></i>Approved</span>
+                            }
+                            else if (Model.Status == "Checked In")
+                            {
+                                <span class="badge-status bg-success-subtle text-success"><i class="fa-solid fa-door-open me-1"></i>Checked In</span>
+                            }
+                            else
+                            {
+                                <span class="badge-status bg-secondary-subtle text-secondary"><i class="fa-solid fa-lock me-1"></i>Checked Out</span>
+                            }
+                        </div>
+                    </div>
+
+                    <div class="col-12">
+                        <hr class="border-slate-100 my-2" />
+                    </div>
+
+                    <div class="col-6">
+                        <span class="info-label d-block">Mobile Number</span>
+                        <span class="info-value">@(Model.Visitor?.MobileNumber ?? "N/A")</span>
+                    </div>
+                    <div class="col-6">
+                        <span class="info-label d-block">Department</span>
+                        <span class="info-value">@(Model.Department?.DepartmentName ?? "N/A")</span>
+                    </div>
+
+                    <div class="col-6">
+                        <span class="info-label d-block">Host Employee</span>
+                        <span class="info-value">@(Model.Employee?.FirstName + " " + Model.Employee?.LastName)</span>
+                    </div>
+                    <div class="col-6">
+                        <span class="info-label d-block">Purpose of Visit</span>
+                        <span class="info-value text-wrap">@(Model.EntryRequest?.Purpose ?? Model.VisitEntry?.Appointment?.Purpose ?? "N/A")</span>
+                    </div>
+
+                    <div class="col-12">
+                        <hr class="border-slate-100 my-2" />
+                    </div>
+
+                    <div class="col-6">
+                        <span class="info-label d-block">Check-In Time</span>
+                        <span class="info-value">@(Model.VisitEntry != null ? Model.VisitEntry.CheckInTime.ToLocalTime().ToString("dd-MM-yyyy hh:mm tt") : "Pending Check-In")</span>
+                    </div>
+                    <div class="col-6">
+                        <span class="info-label d-block">Check-Out Time</span>
+                        <span class="info-value">@(Model.VisitEntry?.CheckOutTime != null ? Model.VisitEntry.CheckOutTime.Value.ToLocalTime().ToString("dd-MM-yyyy hh:mm tt") : "N/A")</span>
+                    </div>
+                </div>
+            }
+            else
+            {
+                <div class="text-center py-4 text-muted">
+                    <i class="fa-solid fa-triangle-exclamation fa-2x mb-3 text-warning"></i>
+                    <p class="mb-0 small">No gate pass matching this verification request could be found. Access is denied.</p>
+                </div>
+            }
+        </div>
+    </div>
+
+</body>
+</html>

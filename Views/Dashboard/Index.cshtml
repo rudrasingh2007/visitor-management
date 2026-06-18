@@ -311,24 +311,8 @@
     else
     {
         <!-- Default Admin / General Dashboard -->
-        <div class="row g-3 mb-4">
-            <!-- Visitors Today -->
-            <div class="col-12 col-sm-6 col-md-4 col-xxl-2">
-                <div class="card stat-card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-primary border-4 position-relative overflow-hidden">
-                    <div class="card-body p-0 d-flex align-items-center justify-content-between">
-                        <div>
-                            <span class="text-muted small uppercase fw-semibold d-block mb-1">Visitors Today</span>
-                            <h3 class="fw-bold mb-0 text-dark">@Model.VisitorsToday</h3>
-                        </div>
-                        <div class="stat-icon-wrapper bg-primary bg-opacity-10 text-primary rounded-circle p-2">
-                            <i class="fa-solid fa-users fa-lg"></i>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
             <!-- Visitors Inside -->
-            <div class="col-12 col-sm-6 col-md-4 col-xxl-2">
+            <div class="col-12 col-sm-6 col-md-4 col-xxl">
                 <div class="card stat-card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-success border-4 position-relative overflow-hidden">
                     <div class="card-body p-0 d-flex align-items-center justify-content-between">
                         <div>
@@ -342,12 +326,12 @@
                 </div>
             </div>
 
-            <!-- Total Visits Today -->
-            <div class="col-12 col-sm-6 col-md-4 col-xxl-2">
+            <!-- Checked-Out Visitors Today -->
+            <div class="col-12 col-sm-6 col-md-4 col-xxl">
                 <div class="card stat-card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-info border-4 position-relative overflow-hidden">
                     <div class="card-body p-0 d-flex align-items-center justify-content-between">
                         <div>
-                            <span class="text-muted small uppercase fw-semibold d-block mb-1">Total Visits Today</span>
+                            <span class="text-muted small uppercase fw-semibold d-block mb-1">Checked-Out Visitors Today</span>
                             <h3 class="fw-bold mb-0 text-dark">@Model.TotalVisitsToday</h3>
                         </div>
                         <div class="stat-icon-wrapper bg-info bg-opacity-10 text-info rounded-circle p-2">
@@ -357,12 +341,12 @@
                 </div>
             </div>
 
-            <!-- Pending Appointments -->
-            <div class="col-12 col-sm-6 col-md-4 col-xxl-2">
+            <!-- Pending Requests -->
+            <div class="col-12 col-sm-6 col-md-4 col-xxl">
                 <div class="card stat-card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-warning border-4 position-relative overflow-hidden">
                     <div class="card-body p-0 d-flex align-items-center justify-content-between">
                         <div>
-                            <span class="text-muted small uppercase fw-semibold d-block mb-1">Pending Appts</span>
+                            <span class="text-muted small uppercase fw-semibold d-block mb-1">Pending Requests</span>
                             <h3 class="fw-bold mb-0 text-dark">@Model.PendingAppointments</h3>
                         </div>
                         <div class="stat-icon-wrapper bg-warning bg-opacity-10 text-warning rounded-circle p-2">
@@ -372,12 +356,12 @@
                 </div>
             </div>
 
-            <!-- Approved Appointments -->
-            <div class="col-12 col-sm-6 col-md-4 col-xxl-2">
+            <!-- Approved Requests -->
+            <div class="col-12 col-sm-6 col-md-4 col-xxl">
                 <div class="card stat-card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-teal border-4 position-relative overflow-hidden">
                     <div class="card-body p-0 d-flex align-items-center justify-content-between">
                         <div>
-                            <span class="text-muted small uppercase fw-semibold d-block mb-1">Approved Appts</span>
+                            <span class="text-muted small uppercase fw-semibold d-block mb-1">Approved Requests</span>
                             <h3 class="fw-bold mb-0 text-dark">@Model.ApprovedAppointments</h3>
                         </div>
                         <div class="stat-icon-wrapper bg-teal bg-opacity-10 text-teal rounded-circle p-2">
@@ -387,12 +371,12 @@
                 </div>
             </div>
 
-            <!-- Gate Passes Today -->
-            <div class="col-12 col-sm-6 col-md-4 col-xxl-2">
+            <!-- Passes Generated Today -->
+            <div class="col-12 col-sm-6 col-md-4 col-xxl">
                 <div class="card stat-card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-danger border-4 position-relative overflow-hidden">
                     <div class="card-body p-0 d-flex align-items-center justify-content-between">
                         <div>
-                            <span class="text-muted small uppercase fw-semibold d-block mb-1">Gate Passes Today</span>
+                            <span class="text-muted small uppercase fw-semibold d-block mb-1">Passes Generated Today</span>
                             <h3 class="fw-bold mb-0 text-dark">@Model.GatePassesToday</h3>
                         </div>
                         <div class="stat-icon-wrapper bg-danger bg-opacity-10 text-danger rounded-circle p-2">
@@ -519,8 +503,8 @@
                                                         case "Cancelled":
                                                             <span class="badge bg-secondary-subtle text-secondary px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-ban me-1"></i>Cancelled</span>
                                                             break;
-                                                        case "Completed":
-                                                            <span class="badge bg-info-subtle text-info px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-circle-check me-1"></i>Completed</span>
+                                                        case "Checked Out":
+                                                            <span class="badge bg-info-subtle text-info px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-circle-check me-1"></i>Checked Out</span>
                                                             break;
                                                         default:
                                                             <span class="badge bg-secondary px-2.5 py-1.5 rounded-pill fs-9">@appt.Status</span>
@@ -577,11 +561,8 @@
                                                         case "Checked In":
                                                             <span class="badge bg-primary-subtle text-primary px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-arrow-right-to-bracket me-1"></i>Checked In</span>
                                                             break;
-                                                        case "In Meeting":
-                                                            <span class="badge bg-info-subtle text-info px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-comments me-1"></i>In Meeting</span>
-                                                            break;
-                                                        case "Completed":
-                                                            <span class="badge bg-success-subtle text-success px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-circle-check me-1"></i>Completed</span>
+                                                        case "Checked Out":
+                                                            <span class="badge bg-success-subtle text-success px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-circle-check me-1"></i>Checked Out</span>
                                                             break;
                                                         default:
                                                             <span class="badge bg-secondary px-2.5 py-1.5 rounded-pill fs-9">@log.VisitStatus</span>
@@ -681,7 +662,7 @@
                                 '#198754', // Approved
                                 '#dc3545', // Rejected
                                 '#6c757d', // Cancelled
-                                '#0dcaf0'  // Completed
+                                '#0dcaf0'  // Checked Out
                             ],
                             borderWidth: 2,
                             hoverOffset: 4

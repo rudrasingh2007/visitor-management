@@ -14,8 +14,6 @@ using VisitorManagementSystem.ViewModels;
 
 namespace VisitorManagementSystem.Controllers
 {
-    [SessionAuthorize]
-    [HasPermission("Gate Pass", "View")]
     public class GatePassController : Controller
     {
         private readonly ApplicationDbContext _context;
@@ -28,6 +26,8 @@ namespace VisitorManagementSystem.Controllers
         }
 
         // 1. Gate Pass List
+        [SessionAuthorize]
+        [HasPermission("Gate Pass", "View")]
         public async Task<IActionResult> Index()
         {
             var gatePasses = await _context.GatePassMasters
@@ -46,13 +46,15 @@ namespace VisitorManagementSystem.Controllers
         }
 
         // 2. Generate Gate Pass (Disabled - Automated in background)
+        [SessionAuthorize]
+        [HasPermission("Gate Pass", "Add")]
         public IActionResult Generate()
         {
             return RedirectToAction(nameof(Index));
         }
 
         // AJAX helper: Fetch visit details on Select
-        [HttpGet]
+        [SessionAuthorize]
         public async Task<JsonResult> GetVisitDetails(int visitEntryId)
         {
             var visit = await _context.VisitEntryMasters
@@ -82,6 +84,8 @@ namespace VisitorManagementSystem.Controllers
         }
 
         // 3. View Gate Pass Details
+        [SessionAuthorize]
+        [HasPermission("Gate Pass", "View")]
         public async Task<IActionResult> Details(int id)
         {
             var gatePass = await _context.GatePassMasters
@@ -89,6 +93,7 @@ namespace VisitorManagementSystem.Controllers
                 .Include(g => g.Visitor)
                 .Include(g => g.Employee)
                 .Include(g => g.Department)
+                .Include(g => g.EntryRequest)
                 .FirstOrDefaultAsync(g => g.GatePassId == id);
 
             if (gatePass == null)
@@ -108,6 +113,8 @@ namespace VisitorManagementSystem.Controllers
         }
 
         // 4. Print Gate Pass (GET - Printer friendly layout)
+        [SessionAuthorize]
+        [HasPermission("Gate Pass", "View")]
         public async Task<IActionResult> Print(int id)
         {
             var gatePass = await _context.GatePassMasters
@@ -115,6 +122,7 @@ namespace VisitorManagementSystem.Controllers
                 .Include(g => g.Visitor)
                 .Include(g => g.Employee)
                 .Include(g => g.Department)
+                .Include(g => g.EntryRequest)
                 .FirstOrDefaultAsync(g => g.GatePassId == id);
 
             if (gatePass == null)
@@ -125,34 +133,45 @@ namespace VisitorManagementSystem.Controllers
             return View(gatePass);
         }
 
-        // Helper: Populate SelectList of visits that need a Gate Pass
-        private async Task PopulateVisitsList(int? selectedVisitId = null)
+        // 5. Verify Gate Pass (Scan check, public access)
+        [HttpGet]
+        public async Task<IActionResult> Verify(string number)
         {
-            var generatedVisits = await _context.GatePassMasters.Select(g => g.VisitEntryId).ToListAsync();
-
-            var query = _context.VisitEntryMasters
-                .Include(v => v.Visitor)
-                .Where(v => v.VisitStatus == "Checked In" || v.VisitStatus == "In Meeting");
-
-            if (selectedVisitId.HasValue)
+            if (string.IsNullOrEmpty(number))
             {
-                query = query.Where(v => !generatedVisits.Contains(v.VisitEntryId) || v.VisitEntryId == selectedVisitId.Value);
+                ViewBag.Status = "Invalid";
+                ViewBag.Message = "PASS CLOSED / INVALID";
+                return View();
+            }
+
+            var gatePass = await _context.GatePassMasters
+                .Include(g => g.Visitor)
+                .Include(g => g.Employee)
+                .Include(g => g.Department)
+                .Include(g => g.VisitEntry)
+                .Include(g => g.EntryRequest)
+                .FirstOrDefaultAsync(g => g.GatePassNumber == number);
+
+            if (gatePass == null)
+            {
+                ViewBag.Status = "Invalid";
+                ViewBag.Message = "PASS CLOSED / INVALID";
+                return View();
+            }
+
+            // QR verification logic: VALID PASS if status is Approved or Checked In
+            if (gatePass.Status == "Approved" || gatePass.Status == "Checked In")
+            {
+                ViewBag.Status = "Valid";
+                ViewBag.Message = "VALID PASS";
             }
             else
             {
-                query = query.Where(v => !generatedVisits.Contains(v.VisitEntryId));
+                ViewBag.Status = "Invalid";
+                ViewBag.Message = "PASS CLOSED / INVALID";
             }
 
-            var visits = await query
-                .OrderByDescending(v => v.CheckInTime)
-                .Select(v => new
-                {
-                    VisitEntryId = v.VisitEntryId,
-                    Text = $"Entry #{v.VisitEntryId} - {v.Visitor!.FirstName} {v.Visitor!.LastName} (In: {v.CheckInTime.ToLocalTime():dd MMM hh:mm tt})"
-                })
-                .ToListAsync();
-
-            ViewBag.VisitsList = new SelectList(visits, "VisitEntryId", "Text", selectedVisitId);
+            return View(gatePass);
         }
     }
 }

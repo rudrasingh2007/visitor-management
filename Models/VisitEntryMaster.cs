@@ -49,7 +49,7 @@ namespace VisitorManagementSystem.Models
         [Required(ErrorMessage = "Visit Status is required.")]
         [StringLength(20, ErrorMessage = "Visit Status cannot exceed 20 characters.")]
         [Column("VisitStatus")]
-        public string VisitStatus { get; set; } = "Checked In"; // Checked In, In Meeting, Checked Out, Completed
+        public string VisitStatus { get; set; } = "Checked In"; // Checked In, Checked Out
 
         [StringLength(500, ErrorMessage = "Remarks cannot exceed 500 characters.")]
         [Column("Remarks")]

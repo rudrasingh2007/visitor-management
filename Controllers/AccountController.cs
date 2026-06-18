@@ -42,14 +42,15 @@ namespace VisitorManagementSystem.Controllers
                 return View();
             }
 
-            // Auto-seed rudra123 if it is missing
+            // Auto-seed rudra123 if it is missing or needs linking
             if (username == "rudra123")
             {
                 var existing = await _context.UserMasters.FirstOrDefaultAsync(u => u.Username == "rudra123");
+                var employeeRole = await _context.RoleMasters.FirstOrDefaultAsync(r => r.RoleName == "Employee");
+                var employee = await _context.EmployeeMasters.FirstOrDefaultAsync(e => e.Email == "rudra123@gmail.com");
+
                 if (existing == null)
                 {
-                    var employeeRole = await _context.RoleMasters.FirstOrDefaultAsync(r => r.RoleName == "Employee");
-                    var employee = await _context.EmployeeMasters.FirstOrDefaultAsync(e => e.Email == "rudra123@gmail.com");
                     if (employeeRole != null && employee != null)
                     {
                         var newUser = new UserMaster
@@ -67,6 +68,12 @@ namespace VisitorManagementSystem.Controllers
                         _context.UserMasters.Add(newUser);
                         await _context.SaveChangesAsync();
                     }
+                }
+                else if (existing.EmployeeId == null && employee != null)
+                {
+                    existing.EmployeeId = employee.EmployeeId;
+                    _context.UserMasters.Update(existing);
+                    await _context.SaveChangesAsync();
                 }
             }
 
@@ -87,6 +94,18 @@ namespace VisitorManagementSystem.Controllers
             {
                 ViewBag.Error = "Your account is inactive. Please contact the administrator.";
                 return View();
+            }
+
+            // Dynamic check: if user has Role == "Employee" but EmployeeId is NULL, resolve it by matching Email
+            if (!user.EmployeeId.HasValue && string.Equals(user.Role?.RoleName, "Employee", StringComparison.OrdinalIgnoreCase))
+            {
+                var matchedEmployee = await _context.EmployeeMasters.FirstOrDefaultAsync(e => e.Email == user.Email);
+                if (matchedEmployee != null)
+                {
+                    user.EmployeeId = matchedEmployee.EmployeeId;
+                    _context.UserMasters.Update(user);
+                    await _context.SaveChangesAsync();
+                }
             }
 
             // Create Session variables

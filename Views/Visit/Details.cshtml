@@ -45,13 +45,9 @@
                         {
                             <span class="badge bg-warning-subtle text-warning px-3 py-2 rounded-pill fs-7"><i class="fa-solid fa-door-open me-1"></i>Checked In</span>
                         }
-                        else if (Model.VisitStatus == "In Meeting")
+                        else if (Model.VisitStatus == "Checked Out")
                         {
-                            <span class="badge bg-info-subtle text-info px-3 py-2 rounded-pill fs-7"><i class="fa-solid fa-users me-1"></i>In Meeting</span>
-                        }
-                        else if (Model.VisitStatus == "Completed" || Model.VisitStatus == "Checked Out")
-                        {
-                            <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill fs-7"><i class="fa-solid fa-circle-check me-1"></i>Completed</span>
+                            <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill fs-7"><i class="fa-solid fa-circle-check me-1"></i>Checked Out</span>
                         }
                     </div>
                 </div>

@@ -1,7 +1,10 @@
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.EntityFrameworkCore;
+using QRCoder;
 using System;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using VisitorManagementSystem.Data;
@@ -16,10 +19,12 @@ namespace VisitorManagementSystem.Controllers
     public class VisitController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public VisitController(ApplicationDbContext context)
+        public VisitController(ApplicationDbContext context, IWebHostEnvironment webHostEnvironment)
         {
             _context = context;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         // 1. Visit Entry List
@@ -112,11 +117,36 @@ namespace VisitorManagementSystem.Controllers
                 var gatePass = await _context.GatePassMasters
                     .FirstOrDefaultAsync(g => g.VisitorId == appointment.VisitorId &&
                                               g.EmployeeId == appointment.EmployeeId &&
-                                              g.Status == "Active" &&
+                                              g.Status == "Approved" &&
                                               g.VisitEntryId == null);
                 if (gatePass != null)
                 {
                     gatePass.VisitEntryId = visitEntry.VisitEntryId;
+                    gatePass.Status = "Checked In";
+
+                    // Re-generate QR Code payload to reflect Check-In status and timestamp
+                    var visitorName = appointment.Visitor != null ? $"{appointment.Visitor.FirstName} {appointment.Visitor.LastName}" : "Unknown";
+                    var employeeName = appointment.Employee != null ? $"{appointment.Employee.FirstName} {appointment.Employee.LastName}" : "Unknown";
+                    var checkInStr = visitEntry.CheckInTime.ToLocalTime().ToString("dd-MM-yyyy hh:mm tt");
+
+                    var qrPayload = $"Pass No: {gatePass.GatePassNumber}\n" +
+                                    $"Visitor: {visitorName}\n" +
+                                    $"Visitor ID: {gatePass.VisitorId}\n" +
+                                    $"Host: {employeeName}\n" +
+                                    $"Check-In: {checkInStr}\n" +
+                                    $"Status: Checked In\n" +
+                                    $"Link: http://localhost:5000/GatePass/Verify?number={gatePass.GatePassNumber}";
+
+                    using (var qrGenerator = new QRCodeGenerator())
+                    using (var qrCodeData = qrGenerator.CreateQrCode(qrPayload, QRCodeGenerator.ECCLevel.Q))
+                    using (var qrCode = new PngByteQRCode(qrCodeData))
+                    {
+                        byte[] qrBytes = qrCode.GetGraphic(20);
+                        var uploadFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "qrcodes");
+                        var filePath = Path.Combine(uploadFolder, $"{gatePass.GatePassNumber}.png");
+                        await System.IO.File.WriteAllBytesAsync(filePath, qrBytes);
+                    }
+
                     _context.GatePassMasters.Update(gatePass);
                     await _context.SaveChangesAsync();
                 }
@@ -177,27 +207,6 @@ namespace VisitorManagementSystem.Controllers
             return View(visit);
         }
 
-        // Toggle Status between "Checked In" and "In Meeting"
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> StartMeeting(int id)
-        {
-            var visit = await _context.VisitEntryMasters.FindAsync(id);
-            if (visit == null)
-            {
-                return NotFound();
-            }
-
-            if (visit.VisitStatus == "Checked In")
-            {
-                visit.VisitStatus = "In Meeting";
-                await _context.SaveChangesAsync();
-                TempData["SuccessMessage"] = "Visitor is now in the meeting!";
-            }
-
-            return RedirectToAction(nameof(Index));
-        }
-
         // 4. Visitor Check-Out (POST)
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -209,7 +218,7 @@ namespace VisitorManagementSystem.Controllers
                 return NotFound();
             }
 
-            if (visit.VisitStatus == "Checked Out" || visit.VisitStatus == "Completed")
+            if (visit.VisitStatus == "Checked Out")
             {
                 TempData["ErrorMessage"] = "Visitor has already checked out.";
                 return RedirectToAction(nameof(Index));
@@ -217,7 +226,7 @@ namespace VisitorManagementSystem.Controllers
 
             // Record check-out time (UTC) and complete visit status
             visit.CheckOutTime = DateTime.UtcNow;
-            visit.VisitStatus = "Completed"; // Completed status
+            visit.VisitStatus = "Checked Out";
             if (!string.IsNullOrWhiteSpace(checkoutRemarks))
             {
                 visit.Remarks = string.IsNullOrWhiteSpace(visit.Remarks) 
@@ -229,15 +238,49 @@ namespace VisitorManagementSystem.Controllers
             var appointment = await _context.AppointmentMasters.FindAsync(visit.AppointmentId);
             if (appointment != null)
             {
-                appointment.Status = "Completed";
+                appointment.Status = "Checked Out";
             }
 
             // Close the linked active gate pass record
             var gatePass = await _context.GatePassMasters
-                .FirstOrDefaultAsync(g => g.VisitEntryId == visit.VisitEntryId && g.Status == "Active");
+                .FirstOrDefaultAsync(g => g.VisitEntryId == visit.VisitEntryId && g.Status == "Checked In");
             if (gatePass != null)
             {
-                gatePass.Status = "Closed";
+                gatePass.Status = "Checked Out";
+                
+                // Re-generate QR Code payload to reflect Checked Out status (Invalid)
+                if (visit.Visitor == null)
+                {
+                    await _context.Entry(visit).Reference(v => v.Visitor).LoadAsync();
+                }
+                if (visit.Employee == null)
+                {
+                    await _context.Entry(visit).Reference(v => v.Employee).LoadAsync();
+                }
+                var visitorName = visit.Visitor != null ? $"{visit.Visitor.FirstName} {visit.Visitor.LastName}" : "Unknown";
+                var employeeName = visit.Employee != null ? $"{visit.Employee.FirstName} {visit.Employee.LastName}" : "Unknown";
+                var checkInStr = visit.CheckInTime.ToLocalTime().ToString("dd-MM-yyyy hh:mm tt");
+                var checkOutStr = visit.CheckOutTime?.ToLocalTime().ToString("dd-MM-yyyy hh:mm tt") ?? "N/A";
+                
+                var qrPayload = $"Pass No: {gatePass.GatePassNumber}\n" +
+                                $"Visitor: {visitorName}\n" +
+                                $"Visitor ID: {gatePass.VisitorId}\n" +
+                                $"Host: {employeeName}\n" +
+                                $"Check-In: {checkInStr}\n" +
+                                $"Check-Out: {checkOutStr}\n" +
+                                $"Status: Checked Out\n" +
+                                $"Link: http://localhost:5000/GatePass/Verify?number={gatePass.GatePassNumber}";
+                                
+                using (var qrGenerator = new QRCodeGenerator())
+                using (var qrCodeData = qrGenerator.CreateQrCode(qrPayload, QRCodeGenerator.ECCLevel.Q))
+                using (var qrCode = new PngByteQRCode(qrCodeData))
+                {
+                    byte[] qrBytes = qrCode.GetGraphic(20);
+                    var uploadFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "qrcodes");
+                    var filePath = Path.Combine(uploadFolder, $"{gatePass.GatePassNumber}.png");
+                    await System.IO.File.WriteAllBytesAsync(filePath, qrBytes);
+                }
+
                 _context.GatePassMasters.Update(gatePass);
             }
 
