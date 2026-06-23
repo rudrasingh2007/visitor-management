@@ -55,6 +55,12 @@ namespace VisitorManagementSystem.Controllers
         // 2. Create Appointment (GET)
         public async Task<IActionResult> Create()
         {
+            if (HttpContext.Session.GetString("RoleName") == "Employee")
+            {
+                TempData["ErrorMessage"] = "Employees are not authorized to create appointments.";
+                return RedirectToAction("Index");
+            }
+
             await PopulateDropdowns();
             return View(new AppointmentViewModel { AppointmentDate = DateTime.Today });
         }
@@ -64,6 +70,12 @@ namespace VisitorManagementSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(AppointmentViewModel model)
         {
+            if (HttpContext.Session.GetString("RoleName") == "Employee")
+            {
+                TempData["ErrorMessage"] = "Employees are not authorized to create appointments.";
+                return RedirectToAction("Index");
+            }
+
             if (ModelState.IsValid)
             {
                 // Validation: Appointment Date cannot be in the past

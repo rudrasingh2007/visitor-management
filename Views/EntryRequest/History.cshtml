@@ -56,17 +56,38 @@
                                 <td class="small text-dark">@(request.Visitor?.CompanyName ?? "N/A")</td>
                                 <td class="small text-muted">@request.Purpose</td>
                                 <td>
-                                    @if (request.ApprovalStatus == "Approved")
-                                    {
-                                        <span class="badge bg-success-subtle text-success px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-circle-check me-1"></i>Approved</span>
+                                    @{
+                                        string displayStatus = request.ApprovalStatus;
+                                        var latestGatePass = request.GatePasses?.OrderByDescending(g => g.CreatedDate).FirstOrDefault();
+                                        if (latestGatePass != null)
+                                        {
+                                            if (latestGatePass.Status == "Checked In")
+                                            {
+                                                displayStatus = "Checked In";
+                                            }
+                                            else if (latestGatePass.Status == "Checked Out")
+                                            {
+                                                displayStatus = "Checked Out";
+                                            }
+                                        }
                                     }
-                                    else if (request.ApprovalStatus == "Rejected")
+                                    @switch (displayStatus)
                                     {
-                                        <span class="badge bg-danger-subtle text-danger px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-circle-xmark me-1"></i>Rejected</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="badge bg-secondary px-2.5 py-1.5 rounded-pill fs-9">@request.ApprovalStatus</span>
+                                        case "Approved":
+                                            <span class="badge bg-success-subtle text-success px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-circle-check me-1"></i>Approved</span>
+                                            break;
+                                        case "Rejected":
+                                            <span class="badge bg-danger-subtle text-danger px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-circle-xmark me-1"></i>Rejected</span>
+                                            break;
+                                        case "Checked In":
+                                            <span class="badge bg-info-subtle text-info px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-right-to-bracket me-1"></i>Checked In</span>
+                                            break;
+                                        case "Checked Out":
+                                            <span class="badge bg-secondary-subtle text-secondary px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-right-from-bracket me-1"></i>Checked Out</span>
+                                            break;
+                                        default:
+                                            <span class="badge bg-secondary px-2.5 py-1.5 rounded-pill fs-9">@displayStatus</span>
+                                            break;
                                     }
                                 </td>
                                 <td class="small text-muted">@(request.ApprovalRemarks ?? "-")</td>

@@ -50,9 +50,16 @@
                 </div>
                 <div class="card-body p-4 pt-2">
                     <div class="d-flex align-items-center mb-4">
-                        <div class="avatar-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold fs-3 me-3 shadow-sm" style="width: 65px; height: 65px; border-radius: 50%;">
-                            @Model.Visitor?.FirstName.Substring(0, Math.Min(2, Model.Visitor.FirstName.Length)).ToUpper()
-                        </div>
+                        @if (!string.IsNullOrEmpty(Model.Visitor?.PhotoPath))
+                        {
+                            <img src="@Model.Visitor.PhotoPath" alt="Visitor Photo" class="rounded-circle shadow-sm me-3" style="width: 65px; height: 65px; object-fit: cover; border: 2px solid #e0e4ec;" />
+                        }
+                        else
+                        {
+                            <div class="avatar-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold fs-3 me-3 shadow-sm" style="width: 65px; height: 65px; border-radius: 50%;">
+                                @Model.Visitor?.FirstName.Substring(0, Math.Min(2, Model.Visitor.FirstName.Length)).ToUpper()
+                            </div>
+                        }
                         <div>
                             <h5 class="fw-bold text-dark mb-0">@Model.Visitor?.FirstName @Model.Visitor?.LastName</h5>
                             <span class="text-muted">@Model.Visitor?.CompanyName</span>
@@ -109,26 +116,42 @@
                         </div>
                     </div>
 
-                    <!-- Camera Controls (Pre-Capture) -->
-                    <div class="d-flex justify-content-center gap-2 mb-4" id="preCaptureControls">
+                    <!-- Camera Controls (Initial Options) -->
+                    <div class="d-flex justify-content-center gap-2 mb-4 flex-wrap" id="initialControls">
+                        @if (!string.IsNullOrEmpty(Model.Visitor?.PhotoPath))
+                        {
+                            <button type="button" id="btnUseExisting" class="btn btn-info px-4 rounded-pill text-white" data-path="@Model.Visitor.PhotoPath">
+                                <i class="fa-solid fa-image-portrait me-2"></i>Use Existing Photo
+                            </button>
+                        }
                         <button type="button" id="btnStartCamera" class="btn btn-primary px-4 rounded-pill">
                             <i class="fa-solid fa-video me-2"></i>Start Camera
                         </button>
-                        <button type="button" id="btnCapturePhoto" class="btn btn-warning px-4 rounded-pill" style="display: none;">
-                            <i class="fa-solid fa-camera me-2"></i>Capture Photo
+                        <button type="button" id="btnProceedWithoutPhoto" class="btn btn-secondary px-4 rounded-pill">
+                            <i class="fa-solid fa-forward me-2"></i>Proceed Without Photo
                         </button>
                     </div>
 
-                    <!-- Camera Controls (Post-Capture / 3 Buttons) -->
+                    <!-- Capture Button (Shows when camera is on) -->
+                    <div class="d-flex justify-content-center gap-2 mb-4" id="captureControls" style="display: none !important;">
+                        <button type="button" id="btnCapturePhoto" class="btn btn-warning px-4 rounded-pill">
+                            <i class="fa-solid fa-camera me-2"></i>Capture Photo
+                        </button>
+                        <button type="button" id="btnCancelCamera" class="btn btn-light px-4 rounded-pill">
+                            Cancel
+                        </button>
+                    </div>
+
+                    <!-- Post-Capture / Final Actions -->
                     <div class="d-flex justify-content-center gap-3 mb-4" id="postCaptureControls" style="display: none !important;">
                         <button type="button" id="btnBack" class="btn btn-secondary px-4 rounded-pill fw-semibold">
-                            <i class="fa-solid fa-arrow-left me-2"></i>Back
+                            <i class="fa-solid fa-arrow-left me-2"></i>Back / Retry
                         </button>
                         <button type="button" id="btnPrintPass" class="btn btn-info px-4 rounded-pill fw-semibold text-white">
                             <i class="fa-solid fa-print me-2"></i>Print Pass
                         </button>
                         <button type="button" id="btnProceed" class="btn btn-success px-4 rounded-pill fw-bold shadow-sm">
-                            <i class="fa-solid fa-check me-2"></i>Proceed
+                            <i class="fa-solid fa-check me-2"></i>Generate Pass
                         </button>
                     </div>
 
@@ -191,11 +214,17 @@
             const photoPreview = document.getElementById('photoPreview');
             const placeholder = document.getElementById('cameraPlaceholder');
             
-            const btnStart = document.getElementById('btnStartCamera');
-            const btnCapture = document.getElementById('btnCapturePhoto');
-            
-            const preCaptureControls = document.getElementById('preCaptureControls');
+            const initialControls = document.getElementById('initialControls');
+            const captureControls = document.getElementById('captureControls');
+            const preCaptureControls = document.getElementById('preCaptureControls'); // Might be null due to rename
             const postCaptureControls = document.getElementById('postCaptureControls');
+            
+            const btnUseExisting = document.getElementById('btnUseExisting');
+            const btnStart = document.getElementById('btnStartCamera');
+            const btnProceedWithoutPhoto = document.getElementById('btnProceedWithoutPhoto');
+            
+            const btnCapture = document.getElementById('btnCapturePhoto');
+            const btnCancelCamera = document.getElementById('btnCancelCamera');
             
             const btnBack = document.getElementById('btnBack');
             const btnPrintPass = document.getElementById('btnPrintPass');
@@ -205,67 +234,121 @@
             const generateForm = document.getElementById('generatePassForm');
             
             let stream = null;
+            let currentPhotoSelection = null; // Can be 'existing', 'new', 'none'
+            
+            function resetToInitial() {
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                    stream = null;
+                }
+                video.style.display = 'none';
+                photoPreview.style.display = 'none';
+                placeholder.style.display = 'block';
+                
+                initialControls.style.display = 'flex';
+                captureControls.style.setProperty('display', 'none', 'important');
+                postCaptureControls.style.setProperty('display', 'none', 'important');
+                
+                hiddenPhotoInput.value = '';
+                currentPhotoSelection = null;
+            }
 
-            // Start Camera
+            // 1. Use Existing Photo
+            if (btnUseExisting) {
+                btnUseExisting.addEventListener('click', function () {
+                    currentPhotoSelection = 'existing';
+                    const path = this.getAttribute('data-path');
+                    photoPreview.src = path;
+                    
+                    placeholder.style.display = 'none';
+                    video.style.display = 'none';
+                    photoPreview.style.display = 'block';
+                    
+                    hiddenPhotoInput.value = ''; // Empty so backend doesn't overwrite
+                    
+                    initialControls.style.display = 'none';
+                    postCaptureControls.style.setProperty('display', 'flex', 'important');
+                });
+            }
+
+            // 2. Start Camera
             btnStart.addEventListener('click', async function () {
                 try {
                     stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
                     video.srcObject = stream;
                     
-                    video.style.display = 'block';
                     placeholder.style.display = 'none';
                     photoPreview.style.display = 'none';
+                    video.style.display = 'block';
                     
-                    btnStart.style.display = 'none';
-                    btnCapture.style.display = 'inline-block';
-                    
-                    postCaptureControls.style.setProperty('display', 'none', 'important');
-                    preCaptureControls.style.display = 'flex';
+                    initialControls.style.display = 'none';
+                    captureControls.style.setProperty('display', 'flex', 'important');
                 } catch (err) {
                     console.error("Error accessing camera: ", err);
                     alert("Could not access camera. Please ensure permissions are granted.");
                 }
             });
 
+            // 3. Proceed Without Photo
+            btnProceedWithoutPhoto.addEventListener('click', function () {
+                currentPhotoSelection = 'none';
+                
+                placeholder.style.display = 'none';
+                video.style.display = 'none';
+                photoPreview.src = '/img/default_user.png';
+                photoPreview.style.display = 'block';
+                
+                hiddenPhotoInput.value = ''; // Empty
+                
+                initialControls.style.display = 'none';
+                postCaptureControls.style.setProperty('display', 'flex', 'important');
+            });
+
             // Capture Photo
             btnCapture.addEventListener('click', function () {
                 if (!stream) return;
+                currentPhotoSelection = 'new';
                 
-                // Set canvas size to match video aspect ratio but standard resolution
                 canvas.width = 640;
                 canvas.height = 480;
                 
-                // Draw video frame to canvas
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
                 
-                // Get base64 data
                 const base64Data = canvas.toDataURL('image/jpeg', 0.8);
                 hiddenPhotoInput.value = base64Data;
                 
-                // Display preview
                 photoPreview.src = base64Data;
                 photoPreview.style.display = 'block';
                 video.style.display = 'none';
                 
-                // Stop camera stream
                 stream.getTracks().forEach(track => track.stop());
                 stream = null;
                 
-                // Update UI buttons
-                preCaptureControls.style.display = 'none';
+                captureControls.style.setProperty('display', 'none', 'important');
                 postCaptureControls.style.setProperty('display', 'flex', 'important');
             });
 
+            // Cancel Camera
+            if (btnCancelCamera) {
+                btnCancelCamera.addEventListener('click', resetToInitial);
+            }
+
             // Back Button
-            btnBack.addEventListener('click', function () {
-                btnStart.click();
-            });
+            btnBack.addEventListener('click', resetToInitial);
 
             // Print Pass Button
             btnPrintPass.addEventListener('click', function () {
                 const printPhoto = document.getElementById('printPhoto');
-                if (printPhoto) printPhoto.src = hiddenPhotoInput.value;
+                if (printPhoto) {
+                    if (currentPhotoSelection === 'new') {
+                        printPhoto.src = hiddenPhotoInput.value;
+                    } else if (currentPhotoSelection === 'existing' && btnUseExisting) {
+                        printPhoto.src = btnUseExisting.getAttribute('data-path');
+                    } else {
+                        printPhoto.src = '/img/default_user.png';
+                    }
+                }
                 
                 // Use browser's native print which is styled via @@media print
                 window.print();

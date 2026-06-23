@@ -73,6 +73,12 @@ namespace VisitorManagementSystem.Controllers
         [HasPermission("Entry Requests", "Add")]
         public async Task<IActionResult> Create()
         {
+            if (HttpContext.Session.GetString("RoleName") == "Employee")
+            {
+                TempData["ErrorMessage"] = "Employees are not authorized to create entry requests.";
+                return RedirectToAction("Index");
+            }
+
             await PopulateDropdowns();
             return View(new EntryRequestViewModel());
         }
@@ -83,6 +89,12 @@ namespace VisitorManagementSystem.Controllers
         [HasPermission("Entry Requests", "Add")]
         public async Task<IActionResult> Create(EntryRequestViewModel model)
         {
+            if (HttpContext.Session.GetString("RoleName") == "Employee")
+            {
+                TempData["ErrorMessage"] = "Employees are not authorized to create entry requests.";
+                return RedirectToAction("Index");
+            }
+
             if (ModelState.IsValid)
             {
                 // Validation: Prevent duplicate pending requests for the same visitor and employee
@@ -165,6 +177,7 @@ namespace VisitorManagementSystem.Controllers
                 .Include(r => r.Visitor)
                 .Include(r => r.Department)
                 .Include(r => r.Employee)
+                .Include(r => r.GatePasses)
                 .Where(r => r.EmployeeId == employeeId && r.ApprovalStatus != "Pending")
                 .OrderByDescending(r => r.ApprovalDateTime)
                 .ToListAsync();

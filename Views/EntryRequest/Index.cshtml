@@ -5,25 +5,17 @@
 }
 
 <div class="container-fluid px-4 py-4">
-    <!-- Header -->
-    <div class="mb-4">
-        <h3 class="fw-bold text-dark mb-1"><i class="fa-solid fa-list-check me-2 text-primary"></i>Visitor Entry Requests</h3>
-        <p class="text-muted mb-0">View and track all visitor entry requests assigned to you.</p>
-    </div>
 
-    <!-- Temporary Debug Information -->
-    <div class="alert alert-info rounded-4 border-0 p-3 mb-4 shadow-sm">
-        <h6 class="fw-bold mb-2 text-info-emphasis"><i class="fa-solid fa-bug me-2"></i>Debug Information:</h6>
-        <div class="row g-2 small text-info-emphasis">
-            <div class="col-12 col-sm-6"><strong>Logged In EmployeeId:</strong> @ViewBag.DebugEmployeeId</div>
-            <div class="col-12 col-sm-6"><strong>Requests Found:</strong> @ViewBag.DebugRequestsFound</div>
     <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
         <div>
             <h3 class="fw-bold text-dark mb-1"><i class="fa-solid fa-list-check me-2 text-primary"></i>Entry Requests</h3>
             <p class="text-muted mb-0">Manage and track all visitor entry requests.</p>
         </div>
         <div>
-            <a asp-action="Create" class="btn btn-primary px-4 py-2 rounded-3 shadow-sm"><i class="fa-solid fa-plus me-2"></i>Create Request</a>
+            @if (Context.Session.GetString("RoleName") != "Employee")
+            {
+                <a asp-action="Create" class="btn btn-primary px-4 py-2 rounded-3 shadow-sm"><i class="fa-solid fa-plus me-2"></i>Create Request</a>
+            }
         </div>
     </div>
 
@@ -62,7 +54,22 @@
                             <td class="text-muted small">@(request.Visitor?.MobileNumber ?? "-")</td>
                             <td class="small">@(request.Employee != null ? $"{request.Employee.FirstName} {request.Employee.LastName}" : "-")</td>
                             <td>
-                                @switch (request.ApprovalStatus)
+                                @{
+                                    string displayStatus = request.ApprovalStatus;
+                                    var latestGatePass = request.GatePasses?.OrderByDescending(g => g.CreatedDate).FirstOrDefault();
+                                    if (latestGatePass != null)
+                                    {
+                                        if (latestGatePass.Status == "Checked In")
+                                        {
+                                            displayStatus = "Checked In";
+                                        }
+                                        else if (latestGatePass.Status == "Checked Out")
+                                        {
+                                            displayStatus = "Checked Out";
+                                        }
+                                    }
+                                }
+                                @switch (displayStatus)
                                 {
                                     case "Pending":
                                         <span class="badge bg-warning-subtle text-warning px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-hourglass-half me-1"></i>Pending</span>
@@ -73,8 +80,14 @@
                                     case "Rejected":
                                         <span class="badge bg-danger-subtle text-danger px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-circle-xmark me-1"></i>Rejected</span>
                                         break;
+                                    case "Checked In":
+                                        <span class="badge bg-info-subtle text-info px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-right-to-bracket me-1"></i>Checked In</span>
+                                        break;
+                                    case "Checked Out":
+                                        <span class="badge bg-secondary-subtle text-secondary px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-right-from-bracket me-1"></i>Checked Out</span>
+                                        break;
                                     default:
-                                        <span class="badge bg-secondary px-2.5 py-1.5 rounded-pill fs-9">@request.ApprovalStatus</span>
+                                        <span class="badge bg-secondary px-2.5 py-1.5 rounded-pill fs-9">@displayStatus</span>
                                         break;
                                 }
                             </td>
@@ -82,7 +95,7 @@
                                 <a asp-action="Details" asp-route-id="@request.EntryRequestId" class="btn btn-sm btn-outline-info rounded-pill px-3 me-1" title="View Request Details">
                                     <i class="fa-solid fa-eye me-1"></i>View
                                 </a>
-                                @if (request.ApprovalStatus == "Pending" && Context.HasPermission("Entry Requests", "Edit"))
+                                @if (displayStatus == "Pending" && Context.HasPermission("Entry Requests", "Edit"))
                                 {
                                     <button type="button" class="btn btn-sm btn-success rounded-pill px-3 me-1 btn-process-request" data-id="@request.EntryRequestId" data-action="Approve" title="Approve Request">
                                         <i class="fa-solid fa-check"></i>
@@ -91,10 +104,16 @@
                                         <i class="fa-solid fa-xmark"></i>
                                     </button>
                                 }
-                                else if (request.ApprovalStatus == "Approved")
+                                else if (displayStatus == "Approved")
                                 {
                                     <a asp-controller="GatePass" asp-action="Generate" asp-route-entryRequestId="@request.EntryRequestId" class="btn btn-sm btn-outline-primary rounded-pill px-3" title="Generate Visitor Pass">
-                                        <i class="fa-solid fa-id-card-clip me-1"></i>Generate Pass
+                                        <i class="fa-solid fa-id-card-clip"></i>
+                                    </a>
+                                }
+                                else if ((displayStatus == "Checked In" || displayStatus == "Checked Out") && latestGatePass != null)
+                                {
+                                    <a asp-controller="Visit" asp-action="PrintPass" asp-route-id="@latestGatePass.VisitEntryId" class="btn btn-sm btn-outline-secondary rounded-pill px-3" title="View Pass">
+                                        <i class="fa-solid fa-id-card-clip"></i>
                                     </a>
                                 }
                             </td>
@@ -145,7 +164,30 @@
                 "language": {
                     "search": "Filter Requests:",
                     "lengthMenu": "Show _MENU_ entries"
-                }
+                },
+                "buttons": [
+                    {
+                        extend: 'excel',
+                        className: 'btn btn-sm btn-success text-white me-1 rounded-2',
+                        text: '<i class="fa-solid fa-file-excel me-1"></i> Excel',
+                        exportOptions: { columns: ':not(:last-child)' }
+                    },
+                    {
+                        extend: 'pdf',
+                        className: 'btn btn-sm btn-danger text-white me-1 rounded-2',
+                        text: '<i class="fa-solid fa-file-pdf me-1"></i> PDF',
+                        exportOptions: { columns: ':not(:last-child)' }
+                    },
+                    {
+                        extend: 'print',
+                        className: 'btn btn-sm btn-secondary text-white rounded-2',
+                        text: '<i class="fa-solid fa-print me-1"></i> Print',
+                        exportOptions: { columns: ':not(:last-child)' }
+                    }
+                ],
+                "dom": "<'row mb-3'<'col-sm-12 col-md-6'lB><'col-sm-12 col-md-6'f>>" +
+                       "<'row'<'col-sm-12'tr>>" +
+                       "<'row mt-3'<'col-sm-12 col-md-5'i><'col-sm-12 col-md-7'p>>"
             });
 
             $('.btn-process-request').on('click', function () {

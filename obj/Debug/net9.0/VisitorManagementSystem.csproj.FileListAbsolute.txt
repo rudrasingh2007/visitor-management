@@ -110,7 +110,6 @@ C:\Users\rudra.singh\source\repos\VisitorManagementSystem\obj\Debug\net9.0\rjsmc
 C:\Users\rudra.singh\source\repos\VisitorManagementSystem\obj\Debug\net9.0\scopedcss\Views\Shared\_Layout.cshtml.rz.scp.css
 C:\Users\rudra.singh\source\repos\VisitorManagementSystem\obj\Debug\net9.0\scopedcss\bundle\VisitorManagementSystem.styles.css
 C:\Users\rudra.singh\source\repos\VisitorManagementSystem\obj\Debug\net9.0\scopedcss\projectbundle\VisitorManagementSystem.bundle.scp.css
-C:\Users\rudra.singh\source\repos\VisitorManagementSystem\obj\Debug\net9.0\compressed\efdc51qpul-b9sayid5wm.gz
 C:\Users\rudra.singh\source\repos\VisitorManagementSystem\obj\Debug\net9.0\compressed\mu67mays60-61n19gt1b8.gz
 C:\Users\rudra.singh\source\repos\VisitorManagementSystem\obj\Debug\net9.0\compressed\36waym0qae-xtxxf3hu2r.gz
 C:\Users\rudra.singh\source\repos\VisitorManagementSystem\obj\Debug\net9.0\compressed\hldkt3gd5o-bqjiyaj88i.gz
@@ -191,3 +190,4 @@ C:\Users\rudra.singh\source\repos\VisitorManagementSystem\bin\Debug\net9.0\runti
 C:\Users\rudra.singh\source\repos\VisitorManagementSystem\bin\Debug\net9.0\runtimes\unix\lib\net6.0\System.Drawing.Common.dll
 C:\Users\rudra.singh\source\repos\VisitorManagementSystem\bin\Debug\net9.0\runtimes\win\lib\net6.0\System.Drawing.Common.dll
 C:\Users\rudra.singh\source\repos\VisitorManagementSystem\obj\Debug\net9.0\VisitorManagementSystem.sourcelink.json
+C:\Users\rudra.singh\source\repos\VisitorManagementSystem\obj\Debug\net9.0\compressed\efdc51qpul-l2lvr772ry.gz
