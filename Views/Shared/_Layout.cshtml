@@ -147,11 +147,20 @@
         /* Page Content wrapper */
         #page-content-wrapper {
             margin-left: var(--sidebar-width);
-            width: calc(100% - var(--sidebar-width));
+            flex-grow: 1;
+            min-width: 0;
             min-height: 100vh;
             display: flex;
             flex-direction: column;
             transition: all 0.3s ease;
+        }
+
+        #sidebar-wrapper.toggled {
+            margin-left: calc(-1 * var(--sidebar-width));
+        }
+
+        #page-content-wrapper.toggled {
+            margin-left: 0;
         }
 
         /* Top Navbar */
@@ -196,11 +205,10 @@
             #sidebar-wrapper {
                 margin-left: calc(-1 * var(--sidebar-width));
             }
-            #page-content-wrapper {
-                margin-left: 0;
-                width: 100%;
-            }
             #sidebar-wrapper.toggled {
+                margin-left: 0;
+            }
+            #page-content-wrapper {
                 margin-left: 0;
             }
             #page-content-wrapper.toggled {
@@ -259,27 +267,15 @@
 
                 <!-- Entry Requests (Role-based) -->
                 @if (Context.HasPermission("Entry Requests", "View"))
-                {
-                    if (roleName == "Employee")
-                    {
-                        <a asp-controller="EntryRequest" asp-action="Pending" class="list-group-item list-group-item-action @(currentController == "EntryRequest" && ViewContext.RouteData.Values["action"]?.ToString() == "Pending" ? "active-nav" : "")">
-                            <i class="fa-solid fa-hourglass-half"></i>Pending Visitor Requests
-                        </a>
-                        <a asp-controller="EntryRequest" asp-action="History" class="list-group-item list-group-item-action @(currentController == "EntryRequest" && ViewContext.RouteData.Values["action"]?.ToString() == "History" ? "active-nav" : "")">
-                            <i class="fa-solid fa-clock-rotate-left"></i>Approval History
-                        </a>
-                    }
-                    else
-                    {
-                        <a asp-controller="EntryRequest" asp-action="Index" class="list-group-item list-group-item-action @(currentController == "EntryRequest" ? "active-nav" : "")">
-                            <i class="fa-solid fa-list-check"></i>Entry Requests
-                        </a>
-                    }
-                }
+{
+    <a asp-controller="EntryRequest" asp-action="Index" class="list-group-item list-group-item-action @(currentController == "EntryRequest" ? "active-nav" : "")">
+        <i class="fa-solid fa-list-check"></i>Entry Requests
+    </a>
+}
 
                 <!-- User Management -->
-                @if ((Context.HasPermission("User Master", "View") || Context.HasPermission("Role Master", "View")) && roleName != "Security Guard" && roleName != "Employee")
-                {
+                @if (Context.HasPermission("User Master", "View") || Context.HasPermission("Role Master", "View"))
+                 {
                     <a href="#userSubmenu" data-bs-toggle="collapse" aria-expanded="@(isUserMgmtOpen ? "true" : "false")" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(isUserMgmtOpen ? "" : "collapsed")">
                         <span><i class="fa-solid fa-users-gear"></i>User Management</span>
                         <i class="fa-solid fa-chevron-down submenu-arrow"></i>
@@ -304,22 +300,26 @@
                 }
 
                 <!-- Visitor Management -->
-                @if (Context.HasPermission("Visitor Master", "View") && roleName != "Employee" && roleName != "Security Guard")
+                @if (Context.HasPermission("Visitor Management", "View") || Context.HasPermission("Visitor Master", "View"))
                 {
                     <a href="#visitorSubmenu" data-bs-toggle="collapse" aria-expanded="@(isVisitorMgmtOpen ? "true" : "false")" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(isVisitorMgmtOpen ? "" : "collapsed")">
                         <span><i class="fa-solid fa-id-badge"></i>Visitor Management</span>
                         <i class="fa-solid fa-chevron-down submenu-arrow"></i>
                     </a>
                     <div class="collapse submenu @(isVisitorMgmtOpen ? "show" : "")" id="visitorSubmenu">
-                        <a asp-controller="Visitor" asp-action="Index" class="list-group-item list-group-item-action @(currentController == "Visitor" ? "active-nav" : "")">
-                            <i class="fa-solid fa-address-book"></i>Visitor Master
-                        </a>
+                        @if (Context.HasPermission("Visitor Master", "View"))
+                        {
+                            <a asp-controller="Visitor" asp-action="Index" class="list-group-item list-group-item-action @(currentController == "Visitor" ? "active-nav" : "")">
+                                <i class="fa-solid fa-address-book"></i>Visitor Master
+                            </a>
+                        }
+
                     </div>
                 }
-
+                
                 <!-- Organization Management -->
-                @if ((Context.HasPermission("Department Master", "View") || Context.HasPermission("Employee Master", "View")) && roleName != "Security Guard" && roleName != "Employee")
-                {
+                @if (Context.HasPermission("Department Master", "View") || Context.HasPermission("Employee Master", "View"))
+                 {
                     <a href="#orgSubmenu" data-bs-toggle="collapse" aria-expanded="@(isOrgMgmtOpen ? "true" : "false")" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(isOrgMgmtOpen ? "" : "collapsed")">
                         <span><i class="fa-solid fa-sitemap"></i>Organization Management</span>
                         <i class="fa-solid fa-chevron-down submenu-arrow"></i>
@@ -341,8 +341,8 @@
                 }
 
                 <!-- Appointment Management -->
-                @if (Context.HasPermission("Appointment Master", "View") && roleName != "Security Guard" && roleName != "Employee")
-                {
+                @if (Context.HasPermission("Appointment Master", "View"))
+                 {
                     <a href="#appointmentSubmenu" data-bs-toggle="collapse" aria-expanded="@(isAppointmentMgmtOpen ? "true" : "false")" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(isAppointmentMgmtOpen ? "" : "collapsed")">
                         <span><i class="fa-solid fa-calendar-check"></i>Appointment Management</span>
                         <i class="fa-solid fa-chevron-down submenu-arrow"></i>
@@ -355,38 +355,23 @@
                 }
 
                 <!-- Visit Management -->
-                @if (Context.HasPermission("Visit Entry", "View") && roleName != "Employee")
-                {
+                @if (Context.HasPermission("Visit Entry", "View"))
+                 {
                     <a href="#visitSubmenu" data-bs-toggle="collapse" aria-expanded="@(isVisitMgmtOpen ? "true" : "false")" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(isVisitMgmtOpen ? "" : "collapsed")">
                         <span><i class="fa-solid fa-door-open"></i>Visit Management</span>
                         <i class="fa-solid fa-chevron-down submenu-arrow"></i>
                     </a>
                     <div class="collapse submenu @(isVisitMgmtOpen ? "show" : "")" id="visitSubmenu">
-                        <a asp-controller="Visit" asp-action="CheckIn" class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["action"]?.ToString() == "CheckIn" && currentController == "Visit" ? "active-nav" : "")">
-                            <i class="fa-solid fa-user-check"></i>Visitor Check-In
-                        </a>
                         <a asp-controller="Visit" asp-action="Index" class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["action"]?.ToString() == "Index" && currentController == "Visit" ? "active-nav" : "")">
                             <i class="fa-solid fa-list-check"></i>Visit Entry List
                         </a>
                     </div>
                 }
 
-                <!-- Gate Pass Management -->
-                @if (Context.HasPermission("Gate Pass", "View") && roleName != "Employee" && roleName != "Security Guard")
-                {
-                    <a href="#gatePassSubmenu" data-bs-toggle="collapse" aria-expanded="@(isGatePassMgmtOpen ? "true" : "false")" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(isGatePassMgmtOpen ? "" : "collapsed")">
-                        <span><i class="fa-solid fa-ticket"></i>Gate Pass Management</span>
-                        <i class="fa-solid fa-chevron-down submenu-arrow"></i>
-                    </a>
-                    <div class="collapse submenu @(isGatePassMgmtOpen ? "show" : "")" id="gatePassSubmenu">
-                        <a asp-controller="GatePass" asp-action="Index" class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["action"]?.ToString() == "Index" && currentController == "GatePass" ? "active-nav" : "")">
-                            <i class="fa-solid fa-list-ul"></i>Gate Pass List
-                        </a>
-                    </div>
-                }
+
 
                 <!-- Reports & History -->
-                @if (Context.HasPermission("Reports", "View") && roleName != "Employee")
+                @if (Context.HasPermission("Reports", "View"))
                 {
                     <a href="#reportsSubmenu" data-bs-toggle="collapse" aria-expanded="@(isReportsOpen ? "true" : "false")" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center @(isReportsOpen ? "" : "collapsed")">
                         <span><i class="fa-solid fa-chart-pie me-2"></i>Reports & History</span>
@@ -405,9 +390,7 @@
                         <a asp-controller="Reports" asp-action="Visit" class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["action"]?.ToString() == "Visit" && currentController == "Reports" ? "active-nav" : "")">
                             <i class="fa-solid fa-door-open"></i>Visit Reports
                         </a>
-                        <a asp-controller="Reports" asp-action="GatePass" class="list-group-item list-group-item-action @(ViewContext.RouteData.Values["action"]?.ToString() == "GatePass" && currentController == "Reports" ? "active-nav" : "")">
-                            <i class="fa-solid fa-ticket"></i>Gate Pass Reports
-                        </a>
+
                     </div>
                 }
                 <!-- Divider -->
@@ -456,13 +439,6 @@
             <div class="main-content">
                 @RenderBody()
             </div>
-
-            <!-- Footer -->
-            <footer class="text-center text-muted border-top">
-                <div class="container-fluid">
-                    <span>&copy; @DateTime.Now.Year - Visitor Management System (User Management Module)</span>
-                </div>
-            </footer>
         </div>
     </div>
 
@@ -483,6 +459,8 @@
 
     <!-- Global Toggle & Form Spinner script -->
     <script>
+        // Debug: output user rights to console
+        console.log('UserRights JSON:', '@HttpContextAccessor.HttpContext?.Session.GetString("UserRights")');
         $(document).ready(function() {
             // Sidebar menu toggle
             $("#menu-toggle").click(function(e) {

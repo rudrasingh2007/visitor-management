@@ -11,12 +11,17 @@ namespace VisitorManagementSystem.Models
         [Column("VisitEntryId")]
         public int VisitEntryId { get; set; }
 
-        [Required(ErrorMessage = "Appointment ID is required.")]
         [Column("AppointmentId")]
-        public int AppointmentId { get; set; }
+        public int? AppointmentId { get; set; }
 
         [ForeignKey("AppointmentId")]
         public virtual AppointmentMaster? Appointment { get; set; }
+
+        [Column("EntryRequestId")]
+        public int? EntryRequestId { get; set; }
+
+        [ForeignKey("EntryRequestId")]
+        public virtual EntryRequestMaster? EntryRequest { get; set; }
 
         [Required(ErrorMessage = "Visitor ID is required.")]
         [Column("VisitorId")]
@@ -39,9 +44,8 @@ namespace VisitorManagementSystem.Models
         [ForeignKey("DepartmentId")]
         public virtual DepartmentMaster? Department { get; set; }
 
-        [Required]
         [Column("CheckInTime")]
-        public DateTime CheckInTime { get; set; } = DateTime.UtcNow;
+        public DateTime? CheckInTime { get; set; }
 
         [Column("CheckOutTime")]
         public DateTime? CheckOutTime { get; set; }
@@ -49,7 +53,7 @@ namespace VisitorManagementSystem.Models
         [Required(ErrorMessage = "Visit Status is required.")]
         [StringLength(20, ErrorMessage = "Visit Status cannot exceed 20 characters.")]
         [Column("VisitStatus")]
-        public string VisitStatus { get; set; } = "Checked In"; // Checked In, Checked Out
+        public string VisitStatus { get; set; } = "Pending"; // Pending, Approved, Rejected, Checked In, Checked Out
 
         [StringLength(500, ErrorMessage = "Remarks cannot exceed 500 characters.")]
         [Column("Remarks")]

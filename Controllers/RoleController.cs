@@ -129,17 +129,16 @@ namespace VisitorManagementSystem.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // Do not allow deletion of roles that are assigned to users
-            var hasUsers = await _context.UserMasters.AnyAsync(u => u.RoleId == id);
-            if (hasUsers)
+            try
             {
-                TempData["ErrorMessage"] = $"Cannot delete role '{role.RoleName}' because it is assigned to existing users.";
-                return RedirectToAction(nameof(Index));
+                _context.RoleMasters.Remove(role);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Role deleted successfully!";
             }
-
-            _context.RoleMasters.Remove(role);
-            await _context.SaveChangesAsync();
-            TempData["SuccessMessage"] = "Role deleted successfully!";
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException)
+            {
+                TempData["ErrorMessage"] = "Cannot delete role because users are assigned to this role.";
+            }
             return RedirectToAction(nameof(Index));
         }
 

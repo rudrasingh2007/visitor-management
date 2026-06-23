@@ -25,115 +25,202 @@ namespace VisitorManagementSystem.Controllers
             _webHostEnvironment = webHostEnvironment;
         }
 
-        // 1. Gate Pass List
-        [SessionAuthorize]
-        [HasPermission("Gate Pass", "View")]
-        public async Task<IActionResult> Index()
+        // 6. Generate Pass UI (Webcam Capture)
+        [HttpGet]
+        public async Task<IActionResult> Generate(int? appointmentId, int? entryRequestId)
         {
-            var gatePasses = await _context.GatePassMasters
-                .Include(g => g.VisitEntry)
-                .Include(g => g.Visitor)
-                .Include(g => g.Employee)
-                .Include(g => g.Department)
-                .OrderByDescending(g => g.IssueDateTime)
-                .ToListAsync();
+            var model = new GeneratePassViewModel();
 
-            // Populate filters in ViewBag
-            ViewBag.VisitorsList = new SelectList(await _context.VisitorMasters.OrderBy(v => v.FirstName).Select(v => new { Name = v.FirstName + " " + v.LastName }).ToListAsync(), "Name", "Name");
-            ViewBag.EmployeesList = new SelectList(await _context.EmployeeMasters.OrderBy(e => e.FirstName).Select(e => new { Name = e.FirstName + " " + e.LastName }).ToListAsync(), "Name", "Name");
-
-            return View(gatePasses);
-        }
-
-        // 2. Generate Gate Pass (Disabled - Automated in background)
-        [SessionAuthorize]
-        [HasPermission("Gate Pass", "Add")]
-        public IActionResult Generate()
-        {
-            return RedirectToAction(nameof(Index));
-        }
-
-        // AJAX helper: Fetch visit details on Select
-        [SessionAuthorize]
-        public async Task<JsonResult> GetVisitDetails(int visitEntryId)
-        {
-            var visit = await _context.VisitEntryMasters
-                .Include(v => v.Visitor)
-                .Include(v => v.Employee)
-                .Include(v => v.Department)
-                .Include(v => v.Appointment)
-                .FirstOrDefaultAsync(v => v.VisitEntryId == visitEntryId);
-
-            if (visit == null)
+            if (appointmentId.HasValue)
             {
-                return Json(null);
+                var app = await _context.AppointmentMasters
+                    .Include(a => a.Visitor)
+                    .Include(a => a.Employee)
+                    .Include(a => a.Department)
+                    .FirstOrDefaultAsync(a => a.AppointmentId == appointmentId);
+                
+                if (app == null) return NotFound();
+
+                model.AppointmentId = app.AppointmentId;
+                model.Visitor = app.Visitor;
+                model.Employee = app.Employee;
+                model.Department = app.Department;
+                model.Purpose = app.Purpose ?? "";
+                model.RequestType = "Appointment";
+                if (model.Visitor != null)
+                {
+                    model.Address = $"{model.Visitor.Address}, {model.Visitor.City}, {model.Visitor.State}";
+                }
+            }
+            else if (entryRequestId.HasValue)
+            {
+                var req = await _context.EntryRequestMasters
+                    .Include(r => r.Visitor)
+                    .Include(r => r.Employee)
+                    .Include(r => r.Department)
+                    .FirstOrDefaultAsync(r => r.EntryRequestId == entryRequestId);
+                
+                if (req == null) return NotFound();
+
+                model.EntryRequestId = req.EntryRequestId;
+                model.Visitor = req.Visitor;
+                model.Employee = req.Employee;
+                model.Department = req.Department;
+                model.Purpose = req.Purpose ?? "";
+                model.RequestType = "Walk-In";
+                if (model.Visitor != null)
+                {
+                    model.Address = $"{model.Visitor.Address}, {model.Visitor.City}, {model.Visitor.State}";
+                }
+            }
+            else
+            {
+                return BadRequest();
             }
 
-            return Json(new
+            var refId = model.AppointmentId ?? model.EntryRequestId ?? 0;
+            model.GatePassNumber = $"GP-{DateTime.UtcNow.ToString("yyyyMMdd")}-{refId}";
+
+            using (QRCodeGenerator qrGenerator = new QRCodeGenerator())
             {
-                visitorName = visit.Visitor?.FirstName + " " + visit.Visitor?.LastName,
-                visitorMobile = visit.Visitor?.MobileNumber,
-                visitorCompany = visit.Visitor?.CompanyName ?? "N/A",
-                visitorPhoto = visit.Visitor?.PhotoPath ?? "",
-                employeeName = visit.Employee?.FirstName + " " + visit.Employee?.LastName,
-                employeeDesignation = visit.Employee?.Designation,
-                departmentName = visit.Department?.DepartmentName ?? "N/A",
-                purpose = visit.Appointment?.Purpose ?? "N/A",
-                checkInTime = visit.CheckInTime.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")
-            });
+                var qrData = $"GATEPASS:{model.GatePassNumber}|VISITOR:{model.Visitor?.VisitorId}|REF:{refId}";
+                QRCodeData qrCodeData = qrGenerator.CreateQrCode(qrData, QRCodeGenerator.ECCLevel.Q);
+                using PngByteQRCode qrCode = new PngByteQRCode(qrCodeData);
+                byte[] qrBytes = qrCode.GetGraphic(20);
+                model.QRCodeBase64 = Convert.ToBase64String(qrBytes);
+            }
+
+            return View(model);
         }
 
-        // 3. View Gate Pass Details
-        [SessionAuthorize]
-        [HasPermission("Gate Pass", "View")]
-        public async Task<IActionResult> Details(int id)
+        // 7. Save Photo, Generate Pass, and Check-In
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Generate(int? appointmentId, int? entryRequestId, string photoBase64)
         {
-            var gatePass = await _context.GatePassMasters
-                .Include(g => g.VisitEntry)
-                .Include(g => g.Visitor)
-                .Include(g => g.Employee)
-                .Include(g => g.Department)
-                .Include(g => g.EntryRequest)
-                .FirstOrDefaultAsync(g => g.GatePassId == id);
+            if (!appointmentId.HasValue && !entryRequestId.HasValue) return BadRequest();
 
-            if (gatePass == null)
+            VisitorMaster? visitor = null;
+            int employeeId = 0;
+            int departmentId = 0;
+            int refId = 0;
+
+            if (appointmentId.HasValue)
             {
-                return NotFound();
+                var app = await _context.AppointmentMasters.Include(a => a.Visitor).FirstOrDefaultAsync(a => a.AppointmentId == appointmentId);
+                if (app == null) return NotFound();
+                visitor = app.Visitor;
+                employeeId = app.EmployeeId;
+                departmentId = app.DepartmentId;
+                refId = app.AppointmentId;
+            }
+            else
+            {
+                var req = await _context.EntryRequestMasters.Include(r => r.Visitor).FirstOrDefaultAsync(r => r.EntryRequestId == entryRequestId);
+                if (req == null) return NotFound();
+                visitor = req.Visitor;
+                employeeId = req.EmployeeId;
+                departmentId = req.DepartmentId;
+                refId = req.EntryRequestId;
             }
 
-            // Verify Expiry State dynamically
-            if (gatePass.Status == "Active" && DateTime.UtcNow > gatePass.ExpiryDateTime)
+            using (var transaction = await _context.Database.BeginTransactionAsync())
             {
-                gatePass.Status = "Expired";
-                _context.GatePassMasters.Update(gatePass);
-                await _context.SaveChangesAsync();
-            }
+                try
+                {
+                    // 1. Save Photo
+                    if (!string.IsNullOrEmpty(photoBase64) && visitor != null)
+                    {
+                        var base64Data = photoBase64.Substring(photoBase64.IndexOf(",") + 1);
+                        var imageBytes = Convert.FromBase64String(base64Data);
+                        var uploadFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "visitors");
+                        
+                        if (!Directory.Exists(uploadFolder))
+                        {
+                            Directory.CreateDirectory(uploadFolder);
+                        }
 
-            return View(gatePass);
+                        var fileName = $"visitor_{visitor.VisitorId}_{DateTime.UtcNow.Ticks}.jpg";
+                        var filePath = Path.Combine(uploadFolder, fileName);
+                        await System.IO.File.WriteAllBytesAsync(filePath, imageBytes);
+                        
+                        visitor.PhotoPath = $"/uploads/visitors/{fileName}";
+                        _context.VisitorMasters.Update(visitor);
+                        await _context.SaveChangesAsync();
+                    }
+
+                    // 2. Create VisitEntryMaster
+                    var visitEntry = new VisitEntryMaster
+                    {
+                        AppointmentId = appointmentId,
+                        EntryRequestId = entryRequestId,
+                        VisitorId = visitor!.VisitorId,
+                        EmployeeId = employeeId,
+                        DepartmentId = departmentId,
+                        CheckInTime = DateTime.UtcNow,
+                        VisitStatus = "Checked In",
+                        CreatedDate = DateTime.UtcNow
+                    };
+                    _context.VisitEntryMasters.Add(visitEntry);
+                    await _context.SaveChangesAsync();
+
+                    // 3. Generate Gate Pass
+                    var gatePassNumber = $"GP-{DateTime.UtcNow.ToString("yyyyMMdd")}-{refId}";
+                    
+                    string? qrCodePath = null;
+                    using (QRCodeGenerator qrGenerator = new QRCodeGenerator())
+                    {
+                        var qrData = $"GATEPASS:{gatePassNumber}|VISITOR:{visitor.VisitorId}|REF:{refId}";
+                        QRCodeData qrCodeData = qrGenerator.CreateQrCode(qrData, QRCodeGenerator.ECCLevel.Q);
+                        using PngByteQRCode qrCode = new PngByteQRCode(qrCodeData);
+                        byte[] qrBytes = qrCode.GetGraphic(20);
+
+                        var uploadFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "qrcodes");
+                        if (!Directory.Exists(uploadFolder))
+                        {
+                            Directory.CreateDirectory(uploadFolder);
+                        }
+
+                        var fileName = $"{gatePassNumber}.png";
+                        var filePath = Path.Combine(uploadFolder, fileName);
+                        await System.IO.File.WriteAllBytesAsync(filePath, qrBytes);
+                        
+                        qrCodePath = $"/uploads/qrcodes/{fileName}";
+                    }
+
+                    var gatePass = new GatePassMaster
+                    {
+                        GatePassNumber = gatePassNumber,
+                        AppointmentId = appointmentId,
+                        EntryRequestId = entryRequestId,
+                        VisitorId = visitor.VisitorId,
+                        EmployeeId = employeeId,
+                        DepartmentId = departmentId,
+                        VisitEntryId = visitEntry.VisitEntryId,
+                        IssueDateTime = DateTime.UtcNow,
+                        ExpiryDateTime = DateTime.UtcNow.AddHours(24),
+                        QRCodePath = qrCodePath,
+                        Status = "Checked In",
+                        CreatedDate = DateTime.UtcNow
+                    };
+                    _context.GatePassMasters.Add(gatePass);
+                    await _context.SaveChangesAsync();
+
+                    await transaction.CommitAsync();
+
+                    TempData["SuccessMessage"] = "Gate Pass generated and Visitor checked in successfully.";
+                    
+                    return RedirectToAction("Index", "Dashboard");
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    TempData["ErrorMessage"] = "Failed to generate pass: " + ex.Message;
+                    return RedirectToAction("Index", "Dashboard");
+                }
+            }
         }
 
-        // 4. Print Gate Pass (GET - Printer friendly layout)
-        [SessionAuthorize]
-        [HasPermission("Gate Pass", "View")]
-        public async Task<IActionResult> Print(int id)
-        {
-            var gatePass = await _context.GatePassMasters
-                .Include(g => g.VisitEntry)
-                .Include(g => g.Visitor)
-                .Include(g => g.Employee)
-                .Include(g => g.Department)
-                .Include(g => g.EntryRequest)
-                .FirstOrDefaultAsync(g => g.GatePassId == id);
-
-            if (gatePass == null)
-            {
-                return NotFound();
-            }
-
-            return View(gatePass);
-        }
-
-        // 5. Verify Gate Pass (Scan check, public access)
         [HttpGet]
         public async Task<IActionResult> Verify(string number)
         {
@@ -160,7 +247,12 @@ namespace VisitorManagementSystem.Controllers
             }
 
             // QR verification logic: VALID PASS if status is Approved or Checked In
-            if (gatePass.Status == "Approved" || gatePass.Status == "Checked In")
+            if (gatePass.Status == "Checked Out" || (gatePass.VisitEntry != null && gatePass.VisitEntry.VisitStatus == "Checked Out"))
+            {
+                ViewBag.Status = "Invalid";
+                ViewBag.Message = "Visitor Already Checked Out";
+            }
+            else if (gatePass.Status == "Approved" || gatePass.Status == "Checked In")
             {
                 ViewBag.Status = "Valid";
                 ViewBag.Message = "VALID PASS";

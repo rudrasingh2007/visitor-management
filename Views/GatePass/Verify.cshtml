@@ -119,81 +119,24 @@
         </div>
 
         <div class="card-body p-4 pt-5 position-relative">
-            <!-- Visitor Photo -->
-            @if (Model?.Visitor != null && !string.IsNullOrEmpty(Model.Visitor.PhotoPath))
-            {
-                <img src="@Model.Visitor.PhotoPath" class="visitor-photo-box" alt="Visitor Photo" />
-            }
-            else
-            {
-                <div class="visitor-photo-box d-flex align-items-center justify-content-center text-muted" style="font-size: 2.5rem;">
-                    <i class="fa-solid fa-user"></i>
-                </div>
-            }
-
             @if (Model != null)
             {
-                <h4 class="text-center fw-bold text-dark mb-1">@(Model.Visitor?.FirstName + " " + Model.Visitor?.LastName)</h4>
-                <p class="text-center text-muted small mb-4">@(Model.Visitor?.CompanyName ?? "Individual Visitor")</p>
-
-                <div class="row g-3">
-                    <div class="col-6">
-                        <span class="info-label d-block">Pass Number</span>
-                        <span class="info-value text-primary font-monospace">@Model.GatePassNumber</span>
-                    </div>
-                    <div class="col-6">
-                        <span class="info-label d-block">Current Status</span>
-                        <div>
-                            @if (Model.Status == "Approved")
-                            {
-                                <span class="badge-status bg-info-subtle text-info"><i class="fa-solid fa-circle-check me-1"></i>Approved</span>
-                            }
-                            else if (Model.Status == "Checked In")
-                            {
-                                <span class="badge-status bg-success-subtle text-success"><i class="fa-solid fa-door-open me-1"></i>Checked In</span>
-                            }
-                            else
-                            {
-                                <span class="badge-status bg-secondary-subtle text-secondary"><i class="fa-solid fa-lock me-1"></i>Checked Out</span>
-                            }
-                        </div>
-                    </div>
-
-                    <div class="col-12">
-                        <hr class="border-slate-100 my-2" />
-                    </div>
-
-                    <div class="col-6">
-                        <span class="info-label d-block">Mobile Number</span>
-                        <span class="info-value">@(Model.Visitor?.MobileNumber ?? "N/A")</span>
-                    </div>
-                    <div class="col-6">
-                        <span class="info-label d-block">Department</span>
-                        <span class="info-value">@(Model.Department?.DepartmentName ?? "N/A")</span>
-                    </div>
-
-                    <div class="col-6">
-                        <span class="info-label d-block">Host Employee</span>
-                        <span class="info-value">@(Model.Employee?.FirstName + " " + Model.Employee?.LastName)</span>
-                    </div>
-                    <div class="col-6">
-                        <span class="info-label d-block">Purpose of Visit</span>
-                        <span class="info-value text-wrap">@(Model.EntryRequest?.Purpose ?? Model.VisitEntry?.Appointment?.Purpose ?? "N/A")</span>
-                    </div>
-
-                    <div class="col-12">
-                        <hr class="border-slate-100 my-2" />
-                    </div>
-
-                    <div class="col-6">
-                        <span class="info-label d-block">Check-In Time</span>
-                        <span class="info-value">@(Model.VisitEntry != null ? Model.VisitEntry.CheckInTime.ToLocalTime().ToString("dd-MM-yyyy hh:mm tt") : "Pending Check-In")</span>
-                    </div>
-                    <div class="col-6">
-                        <span class="info-label d-block">Check-Out Time</span>
-                        <span class="info-value">@(Model.VisitEntry?.CheckOutTime != null ? Model.VisitEntry.CheckOutTime.Value.ToLocalTime().ToString("dd-MM-yyyy hh:mm tt") : "N/A")</span>
-                    </div>
-                </div>
+                
+                var passModel = new VisitorManagementSystem.ViewModels.PassTemplateViewModel
+                {
+                    GatePassNumber = Model.GatePassNumber,
+                    VisitorName = Model.Visitor?.FirstName + " " + Model.Visitor?.LastName,
+                    MobileNumber = Model.Visitor?.MobileNumber,
+                    EmployeeName = Model.Employee?.FirstName + " " + Model.Employee?.LastName,
+                    Purpose = Model.EntryRequest?.Purpose ?? Model.VisitEntry?.Appointment?.Purpose ?? "N/A",
+                    VisitDate = Model.VisitEntry?.CheckInTime?.ToLocalTime().ToString("dd-MM-yyyy") ?? Model.IssueDateTime.ToLocalTime().ToString("dd-MM-yyyy"),
+                    CheckInTime = Model.VisitEntry?.CheckInTime?.ToLocalTime().ToString("hh:mm tt") ?? "Pending Check-In",
+                    Status = Model.Status,
+                    PhotoPath = Model.Visitor?.PhotoPath,
+                    QRCodePath = Model.QRCodePath
+                };
+                
+                @await Html.PartialAsync("_PassTemplate", passModel)
             }
             else
             {

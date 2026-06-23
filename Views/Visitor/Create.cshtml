@@ -1,7 +1,6 @@
 @model VisitorManagementSystem.ViewModels.VisitorViewModel
 @{
     ViewData["Title"] = "Add Visitor";
-    var defaultPhoto = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120' viewBox='0 0 100 100'><circle cx='50' cy='50' r='45' fill='%23f1f3f5'/><text x='50' y='55' font-size='16' font-family='Segoe UI, Arial' font-weight='bold' fill='%236c757d' text-anchor='middle'>PHOTO</text></svg>";
 }
 
 <div class="container-fluid px-4 py-4">
@@ -29,33 +28,6 @@
                         
                         <div asp-validation-summary="ModelOnly" class="text-danger mb-3 small"></div>
  
-                        <!-- Photo Capture Row (WebRTC Webcam) -->
-                        <div class="row mb-4">
-                            <div class="col-12 col-md-4 text-center mb-3 mb-md-0">
-                                <div class="camera-container border border-2 rounded-circle bg-light overflow-hidden position-relative shadow-sm mb-2" style="width: 150px; height: 150px; margin: 0 auto;">
-                                    <!-- Live Video Stream -->
-                                    <video id="webcamVideo" autoplay playsinline class="w-100 h-100 d-none" style="object-fit: cover; transform: scaleX(-1);"></video>
-                                    <!-- Captured Photo Preview -->
-                                    <img id="photoPreview" src="@defaultPhoto" class="w-100 h-100" style="object-fit: cover;" alt="Visitor Photo Preview" />
-                                    <!-- Canvas for capturing frame (hidden) -->
-                                    <canvas id="webcamCanvas" class="d-none" width="480" height="480"></canvas>
-                                </div>
-                            </div>
-                            <div class="col-12 col-md-8 d-flex flex-column justify-content-center">
-                                <label class="form-label fw-semibold text-dark mb-2"><i class="fa-solid fa-camera me-1"></i> Visitor Photo <span class="text-muted small">(Optional)</span></label>
-                                <div class="d-flex flex-wrap gap-2 mb-2">
-                                    <button type="button" id="btnStartCamera" class="btn btn-sm btn-outline-primary fw-semibold rounded-2"><i class="fa-solid fa-video me-1"></i> Start Camera</button>
-                                    <button type="button" id="btnCapturePhoto" class="btn btn-sm btn-success fw-semibold rounded-2 d-none"><i class="fa-solid fa-camera me-1"></i> Capture Photo</button>
-                                    <button type="button" id="btnRetakePhoto" class="btn btn-sm btn-outline-warning fw-semibold rounded-2 d-none"><i class="fa-solid fa-arrows-rotate me-1"></i> Retake</button>
-                                    <button type="button" id="btnRemovePhoto" class="btn btn-sm btn-outline-danger fw-semibold rounded-2 d-none"><i class="fa-solid fa-trash-can me-1"></i> Remove Photo</button>
-                                </div>
-                                <div class="form-text text-muted small"><i class="fa-solid fa-info-circle me-1"></i> Use your webcam to capture a live visitor photo.</div>
-                                <input type="hidden" id="photoBase64" name="PhotoBase64" />
-                            </div>
-                        </div>
-
-                        <hr class="text-muted border-secondary opacity-10 mb-4" />
-
                         <!-- Basic Information -->
                         <h6 class="fw-bold text-primary mb-3">Basic Details</h6>
                         <div class="row">
@@ -153,23 +125,23 @@
                         <!-- Address Info -->
                         <h6 class="fw-bold text-primary mb-3">Address Information</h6>
                         <div class="mb-3">
-                            <label asp-for="Address" class="form-label fw-semibold text-dark">Address Details</label>
-                            <input asp-for="Address" class="form-control rounded-2 p-2" placeholder="Street number, building details..." />
+                            <label asp-for="Address" class="form-label fw-semibold text-dark">Address Details <span class="text-danger">*</span></label>
+                            <input asp-for="Address" class="form-control rounded-2 p-2" placeholder="Street number, building details..." required />
                             <span asp-validation-for="Address" class="text-danger small"></span>
                         </div>
 
                         <div class="row">
                             <!-- City -->
                             <div class="col-md-6 mb-4">
-                                <label asp-for="City" class="form-label fw-semibold text-dark">City</label>
-                                <input asp-for="City" class="form-control rounded-2 p-2" placeholder="Enter city" />
+                                <label asp-for="City" class="form-label fw-semibold text-dark">City <span class="text-danger">*</span></label>
+                                <input asp-for="City" class="form-control rounded-2 p-2" placeholder="Enter city" required />
                                 <span asp-validation-for="City" class="text-danger small"></span>
                             </div>
 
                             <!-- State -->
                             <div class="col-md-6 mb-4">
-                                <label asp-for="State" class="form-label fw-semibold text-dark">State</label>
-                                <input asp-for="State" class="form-control rounded-2 p-2" placeholder="Enter state" />
+                                <label asp-for="State" class="form-label fw-semibold text-dark">State <span class="text-danger">*</span></label>
+                                <input asp-for="State" class="form-control rounded-2 p-2" placeholder="Enter state" required />
                                 <span asp-validation-for="State" class="text-danger small"></span>
                             </div>
                         </div>
@@ -192,89 +164,4 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
-    
-    <script>
-        let localStream = null;
-        const video = document.getElementById('webcamVideo');
-        const imgPreview = document.getElementById('photoPreview');
-        const canvas = document.getElementById('webcamCanvas');
-        const hiddenInput = document.getElementById('photoBase64');
-
-        const btnStart = document.getElementById('btnStartCamera');
-        const btnCapture = document.getElementById('btnCapturePhoto');
-        const btnRetake = document.getElementById('btnRetakePhoto');
-        const btnRemove = document.getElementById('btnRemovePhoto');
-
-        async function startCamera() {
-            try {
-                localStream = await navigator.mediaDevices.getUserMedia({
-                    video: { width: 640, height: 480, facingMode: "user" },
-                    audio: false
-                });
-                video.srcObject = localStream;
-                video.classList.remove('d-none');
-                imgPreview.classList.add('d-none');
-
-                btnStart.classList.add('d-none');
-                btnCapture.classList.remove('d-none');
-                btnRetake.classList.add('d-none');
-                btnRemove.classList.add('d-none');
-            } catch (err) {
-                console.error("Camera access error:", err);
-                alert("Could not access camera. Please check camera connections and website permissions.");
-            }
-        }
-
-        function stopCamera() {
-            if (localStream) {
-                localStream.getTracks().forEach(track => track.stop());
-                localStream = null;
-            }
-            video.srcObject = null;
-        }
-
-        function capturePhoto() {
-            const context = canvas.getContext('2d');
-            // Mirror the captured image to match the video element
-            context.translate(canvas.width, 0);
-            context.scale(-1, 1);
-            context.drawImage(video, 0, 0, canvas.width, canvas.height);
-            context.setTransform(1, 0, 0, 1, 0, 0); // Reset
-
-            const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
-            hiddenInput.value = dataUrl;
-            imgPreview.src = dataUrl;
-
-            stopCamera();
-            video.classList.add('d-none');
-            imgPreview.classList.remove('d-none');
-
-            btnCapture.classList.add('d-none');
-            btnRetake.classList.remove('d-none');
-            btnRemove.classList.remove('d-none');
-        }
-
-        function retakePhoto() {
-            startCamera();
-        }
-
-        function removePhoto() {
-            stopCamera();
-            hiddenInput.value = '';
-            imgPreview.src = '@defaultPhoto';
-
-            video.classList.add('d-none');
-            imgPreview.classList.remove('d-none');
-
-            btnStart.classList.remove('d-none');
-            btnCapture.classList.add('d-none');
-            btnRetake.classList.add('d-none');
-            btnRemove.classList.add('d-none');
-        }
-
-        btnStart.addEventListener('click', startCamera);
-        btnCapture.addEventListener('click', capturePhoto);
-        btnRetake.addEventListener('click', retakePhoto);
-        btnRemove.addEventListener('click', removePhoto);
-    </script>
 }

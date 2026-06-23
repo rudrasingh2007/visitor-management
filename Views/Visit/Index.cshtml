@@ -52,6 +52,9 @@
                     <label class="form-label fw-semibold text-muted small mb-1">Status</label>
                     <select id="statusFilter" class="form-select rounded-2">
                         <option value="">All Statuses</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Rejected">Rejected</option>
                         <option value="Checked In">Checked In</option>
                         <option value="Checked Out">Checked Out</option>
                     </select>
@@ -113,24 +116,36 @@
                         @foreach (var item in Model)
                         {
                             var durationText = "N/A";
-                            if (item.CheckOutTime.HasValue)
+                            if (item.CheckOutTime.HasValue && item.CheckInTime.HasValue)
                             {
-                                var diff = item.CheckOutTime.Value - item.CheckInTime;
+                                var diff = item.CheckOutTime.Value - item.CheckInTime.Value;
                                 durationText = $"{(int)diff.TotalHours}h {diff.Minutes}m";
                             }
                             <tr>
                                 <td class="fw-semibold">@(item.Visitor != null ? $"{item.Visitor.FirstName} {item.Visitor.LastName}" : "Unknown Visitor")</td>
                                 <td><span class="badge bg-secondary-subtle text-secondary px-2 py-1 fs-8">@(item.Department?.DepartmentName ?? "No Dept")</span></td>
                                 <td>@(item.Employee != null ? $"{item.Employee.FirstName} {item.Employee.LastName}" : "Unknown Employee")</td>
-                                <td class="visit-date" data-date="@item.CheckInTime.ToLocalTime().ToString("yyyy-MM-dd")" data-order="@item.CheckInTime.ToString("yyyyMMddHHmmss")">
-                                    @item.CheckInTime.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")
+                                <td class="visit-date" data-date="@(item.CheckInTime.HasValue ? item.CheckInTime.Value.ToLocalTime().ToString("yyyy-MM-dd") : "")" data-order="@(item.CheckInTime.HasValue ? item.CheckInTime.Value.ToString("yyyyMMddHHmmss") : "00000000000000")">
+                                    @(item.CheckInTime.HasValue ? item.CheckInTime.Value.ToLocalTime().ToString("dd MMM yyyy hh:mm tt") : "Pending Check-In")
                                 </td>
                                 <td>
                                     @(item.CheckOutTime.HasValue ? item.CheckOutTime.Value.ToLocalTime().ToString("dd MMM yyyy hh:mm tt") : "-")
                                 </td>
                                 <td class="fw-bold text-secondary fs-8">@durationText</td>
                                 <td>
-                                     @if (item.VisitStatus == "Checked In")
+                                     @if (item.VisitStatus == "Pending")
+                                     {
+                                         <span class="badge bg-secondary-subtle text-secondary px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-hourglass-start me-1"></i>Pending</span>
+                                     }
+                                     else if (item.VisitStatus == "Approved")
+                                     {
+                                         <span class="badge bg-info-subtle text-info px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-circle-check me-1"></i>Approved</span>
+                                     }
+                                     else if (item.VisitStatus == "Rejected")
+                                     {
+                                         <span class="badge bg-danger-subtle text-danger px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-circle-xmark me-1"></i>Rejected</span>
+                                     }
+                                     else if (item.VisitStatus == "Checked In")
                                      {
                                          <span class="badge bg-warning-subtle text-warning px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-door-open me-1"></i>Checked In</span>
                                      }
@@ -138,12 +153,27 @@
                                      {
                                          <span class="badge bg-success-subtle text-success px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-circle-check me-1"></i>Checked Out</span>
                                      }
+                                     else
+                                     {
+                                         <span class="badge bg-secondary px-3 py-2 fs-8 rounded-pill">@item.VisitStatus</span>
+                                     }
                                  </td>
                                  <td class="text-end">
                                      <!-- Details Button -->
                                      <a asp-action="Details" asp-route-id="@item.VisitEntryId" class="btn btn-sm btn-outline-info me-1 rounded-2" title="View Details">
                                          <i class="fa-solid fa-circle-info"></i>
                                      </a>
+
+                                     @if (item.VisitStatus == "Approved" || item.VisitStatus == "Checked In")
+                                     {
+                                         <!-- Pass Print Button -->
+                                         <a asp-action="PrintPass" asp-route-id="@item.VisitEntryId" class="btn btn-sm btn-primary me-1 rounded-2" title="Print Pass"><i class="fa-solid fa-print"></i> Pass</a>
+                                     }
+                                     else if (item.VisitStatus == "Checked Out")
+                                     {
+                                         <!-- View Pass Button -->
+                                         <a asp-action="PrintPass" asp-route-id="@item.VisitEntryId" class="btn btn-sm btn-outline-secondary me-1 rounded-2" title="View Pass"><i class="fa-solid fa-eye"></i> Pass</a>
+                                     }
  
                                      @if (item.VisitStatus == "Checked In")
                                      {

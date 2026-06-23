@@ -31,7 +31,7 @@ namespace VisitorManagementSystem.Controllers
 
             if (string.Equals(roleName, "Security Guard", StringComparison.OrdinalIgnoreCase))
             {
-                model.SGPendingRequests = await _context.EntryRequestMasters.CountAsync(r => r.ApprovalStatus == "Pending Approval");
+                model.SGPendingRequests = await _context.EntryRequestMasters.CountAsync(r => r.ApprovalStatus == "Pending");
                 model.SGApprovedRequests = await _context.EntryRequestMasters.CountAsync(r => r.ApprovalStatus == "Approved" && r.CreatedDate >= todayStart && r.CreatedDate < todayEnd);
                 model.SGRejectedRequests = await _context.EntryRequestMasters.CountAsync(r => r.ApprovalStatus == "Rejected" && r.CreatedDate >= todayStart && r.CreatedDate < todayEnd);
                 model.SGVisitorsInside = await _context.VisitEntryMasters.CountAsync(v => v.VisitStatus == "Checked In");
@@ -43,23 +43,89 @@ namespace VisitorManagementSystem.Controllers
                     .OrderByDescending(v => v.CheckInTime)
                     .Take(5)
                     .ToListAsync();
+
+                // Approved Requests Ready For Pass Printing (Approved but no gate pass issued yet)
+                var approvedAppointments = await _context.AppointmentMasters
+                    .Include(a => a.Visitor)
+                    .Include(a => a.Employee)
+                    .Where(a => a.Status == "Approved" && !_context.GatePassMasters.Any(g => g.AppointmentId == a.AppointmentId))
+                    .Select(a => new ReadyForPassItem
+                    {
+                        AppointmentId = a.AppointmentId,
+                        EntryRequestId = null,
+                        CreatedDate = a.CreatedDate,
+                        VisitorName = a.Visitor != null ? a.Visitor.FirstName + " " + a.Visitor.LastName : "-",
+                        EmployeeName = a.Employee != null ? a.Employee.FirstName + " " + a.Employee.LastName : "-"
+                    })
+                    .ToListAsync();
+
+                var approvedRequests = await _context.EntryRequestMasters
+                    .Include(r => r.Visitor)
+                    .Include(r => r.Employee)
+                    .Where(r => r.ApprovalStatus == "Approved" && !_context.GatePassMasters.Any(g => g.EntryRequestId == r.EntryRequestId))
+                    .Select(r => new ReadyForPassItem
+                    {
+                        AppointmentId = null,
+                        EntryRequestId = r.EntryRequestId,
+                        CreatedDate = r.CreatedDate,
+                        VisitorName = r.Visitor != null ? r.Visitor.FirstName + " " + r.Visitor.LastName : "-",
+                        EmployeeName = r.Employee != null ? r.Employee.FirstName + " " + r.Employee.LastName : "-"
+                    })
+                    .ToListAsync();
+
+                model.SGReadyForPassRequests = approvedAppointments.Concat(approvedRequests)
+                    .OrderByDescending(x => x.CreatedDate)
+                    .ToList();
             }
             else if (string.Equals(roleName, "Employee", StringComparison.OrdinalIgnoreCase))
             {
                 var employeeId = HttpContext.Session.GetInt32("EmployeeId") ?? 0;
+                var userId = HttpContext.Session.GetInt32("UserId") ?? 0;
 
-                model.EmpPendingApprovals = await _context.EntryRequestMasters.CountAsync(r => r.EmployeeId == employeeId && r.ApprovalStatus == "Pending Approval");
-                model.EmpApprovedToday = await _context.EntryRequestMasters.CountAsync(r => r.EmployeeId == employeeId && r.ApprovalStatus == "Approved" && r.ApprovalDateTime >= todayStart && r.ApprovalDateTime < todayEnd);
-                model.EmpRejectedToday = await _context.EntryRequestMasters.CountAsync(r => r.EmployeeId == employeeId && r.ApprovalStatus == "Rejected" && r.ApprovalDateTime >= todayStart && r.ApprovalDateTime < todayEnd);
-                model.EmpVisitorsWaiting = await _context.VisitEntryMasters.CountAsync(v => v.EmployeeId == employeeId && v.VisitStatus == "Checked In");
+                model.EmpTodaysAppointments = await _context.AppointmentMasters.CountAsync(a => a.EmployeeId == employeeId && a.AppointmentDate.Date == todayStart.Date);
+                model.EmpCompletedAppointments = await _context.AppointmentMasters.CountAsync(a => a.EmployeeId == employeeId && a.Status == "Completed");
+                
+                // My Visitors Today
+                model.EmpVisitorsToday = await _context.VisitEntryMasters
+                    .Where(v => v.EmployeeId == employeeId && v.CheckInTime.HasValue && v.CheckInTime >= todayStart && v.CheckInTime < todayEnd)
+                    .Select(v => v.VisitorId)
+                    .Distinct()
+                    .CountAsync();
 
-                // Fetch pending requests for inline dashboard approval
-                model.PendingRequests = await _context.EntryRequestMasters
+                // Employee Dashboard Lists
+                model.PendingAppointmentRequests = await _context.AppointmentMasters
+                    .Include(a => a.Visitor)
+                    .Include(a => a.Department)
+                    .Where(a => a.EmployeeId == employeeId && a.Status == "Pending")
+                    .OrderByDescending(a => a.CreatedDate)
+                    .ToListAsync();
+
+                model.PendingEntryRequests = await _context.EntryRequestMasters
                     .Include(r => r.Visitor)
                     .Include(r => r.Department)
-                    .Include(r => r.Employee)
-                    .Where(r => r.EmployeeId == employeeId && r.ApprovalStatus == "Pending Approval")
+                    .Where(r => r.EmployeeId == employeeId && r.ApprovalStatus == "Pending")
                     .OrderByDescending(r => r.RequestDateTime)
+                    .ToListAsync();
+
+                model.ApprovedRequests = await _context.VisitEntryMasters
+                    .Include(v => v.Visitor)
+                    .Include(v => v.Department)
+                    .Where(v => v.EmployeeId == employeeId && v.VisitStatus == "Approved")
+                    .OrderByDescending(v => v.CreatedDate)
+                    .ToListAsync();
+
+                model.RejectedRequests = await _context.VisitEntryMasters
+                    .Include(v => v.Visitor)
+                    .Include(v => v.Department)
+                    .Where(v => v.EmployeeId == employeeId && v.VisitStatus == "Rejected")
+                    .OrderByDescending(v => v.CreatedDate)
+                    .ToListAsync();
+
+                model.VisitorHistory = await _context.VisitEntryMasters
+                    .Include(v => v.Visitor)
+                    .Include(v => v.Department)
+                    .Where(v => v.EmployeeId == employeeId && v.VisitStatus == "Checked Out")
+                    .OrderByDescending(v => v.CheckOutTime)
                     .ToListAsync();
             }
             else
@@ -67,13 +133,13 @@ namespace VisitorManagementSystem.Controllers
                 // 1. KPI Cards
                 // Visitors Today (distinct visitors checked in today)
                 model.VisitorsToday = await _context.VisitEntryMasters
-                    .Where(v => v.CheckInTime >= todayStart && v.CheckInTime < todayEnd)
+                    .Where(v => v.CheckInTime.HasValue && v.CheckInTime >= todayStart && v.CheckInTime < todayEnd)
                     .Select(v => v.VisitorId)
                     .Distinct()
                     .CountAsync();
 
                 // Pending Requests
-                model.PendingAppointments = await _context.EntryRequestMasters.CountAsync(r => r.ApprovalStatus == "Pending Approval");
+                model.PendingAppointments = await _context.EntryRequestMasters.CountAsync(r => r.ApprovalStatus == "Pending");
 
                 // Approved Requests
                 model.ApprovedAppointments = await _context.EntryRequestMasters.CountAsync(r => r.ApprovalStatus == "Approved");
@@ -93,8 +159,8 @@ namespace VisitorManagementSystem.Controllers
                 // 2. Daily Visitor Trend (Last 7 Days)
                 var sevenDaysAgo = DateTime.SpecifyKind(DateTime.UtcNow.Date.AddDays(-6), DateTimeKind.Utc);
                 var dailyTrend = await _context.VisitEntryMasters
-                    .Where(v => v.CheckInTime >= sevenDaysAgo)
-                    .GroupBy(v => v.CheckInTime.Date)
+                    .Where(v => v.CheckInTime.HasValue && v.CheckInTime >= sevenDaysAgo)
+                    .GroupBy(v => v.CheckInTime.Value.Date)
                     .Select(g => new { Date = g.Key, Count = g.Count() })
                     .ToListAsync();
 
@@ -112,7 +178,7 @@ namespace VisitorManagementSystem.Controllers
                     .Select(g => new { Status = g.Key, Count = g.Count() })
                     .ToListAsync();
 
-                var statuses = new[] { "Pending Approval", "Approved", "Rejected", "Cancelled", "Checked Out" };
+                var statuses = new[] { "Pending", "Approved", "Rejected", "Cancelled", "Checked Out" };
                 foreach (var status in statuses)
                 {
                     model.AppointmentStatusLabels.Add(status);
@@ -138,8 +204,8 @@ namespace VisitorManagementSystem.Controllers
                 // 5. Monthly Visitor Statistics (Last 6 Months)
                 var sixMonthsAgo = DateTime.SpecifyKind(new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, 1).AddMonths(-5), DateTimeKind.Utc);
                 var monthlyStats = await _context.VisitEntryMasters
-                    .Where(v => v.CheckInTime >= sixMonthsAgo)
-                    .GroupBy(v => new { Year = v.CheckInTime.Year, Month = v.CheckInTime.Month })
+                    .Where(v => v.CheckInTime.HasValue && v.CheckInTime.Value >= sixMonthsAgo)
+                    .GroupBy(v => new { Year = v.CheckInTime.Value.Year, Month = v.CheckInTime.Value.Month })
                     .Select(g => new { g.Key.Year, g.Key.Month, Count = g.Count() })
                     .ToListAsync();
 

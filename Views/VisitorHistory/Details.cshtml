@@ -138,9 +138,9 @@
                                         @foreach (var visit in Model.VisitHistory)
                                         {
                                             var durationText = "N/A";
-                                            if (visit.CheckOutTime.HasValue)
+                                            if (visit.CheckOutTime.HasValue && visit.CheckInTime.HasValue)
                                             {
-                                                var diff = visit.CheckOutTime.Value - visit.CheckInTime;
+                                                var diff = visit.CheckOutTime.Value - visit.CheckInTime.Value;
                                                 durationText = $"{(int)diff.TotalHours}h {diff.Minutes}m";
                                             }
                                             <tr>
@@ -148,7 +148,7 @@
                                                     <div class="fw-semibold">@(visit.Employee != null ? $"{visit.Employee.FirstName} {visit.Employee.LastName}" : "N/A")</div>
                                                     <span class="text-muted small">@(visit.Department?.DepartmentName ?? "N/A")</span>
                                                 </td>
-                                                <td>@visit.CheckInTime.ToLocalTime().ToString("dd-MM-yyyy hh:mm tt")</td>
+                                                <td>@(visit.CheckInTime.HasValue ? visit.CheckInTime.Value.ToLocalTime().ToString("dd-MM-yyyy hh:mm tt") : "Pending Check-In")</td>
                                                 <td>@(visit.CheckOutTime.HasValue ? visit.CheckOutTime.Value.ToLocalTime().ToString("dd-MM-yyyy hh:mm tt") : "-")</td>
                                                 <td class="fw-semibold">@durationText</td>
                                                 <td>

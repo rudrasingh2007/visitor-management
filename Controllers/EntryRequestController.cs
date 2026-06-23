@@ -32,13 +32,39 @@ namespace VisitorManagementSystem.Controllers
         // 1. Index Page - Security Guard Requests List
         public async Task<IActionResult> Index()
         {
-            var requests = await _context.EntryRequestMasters
+            var roleName = HttpContext.Session.GetString("RoleName");
+            var employeeId = HttpContext.Session.GetInt32("EmployeeId");
+
+            var query = _context.EntryRequestMasters
                 .Include(r => r.Visitor)
                 .Include(r => r.Department)
                 .Include(r => r.Employee)
                 .Include(r => r.GatePasses)
-                .OrderByDescending(r => r.RequestDateTime)
-                .ToListAsync();
+                .AsQueryable();
+
+            if (roleName == "Employee" && employeeId.HasValue)
+            {
+                query = query.Where(r => r.EmployeeId == employeeId.Value);
+            }
+
+            var requests = await query.ToListAsync();
+
+            ViewBag.DebugEmployeeId = employeeId ?? 0;
+            ViewBag.DebugRequestsFound = requests.Count;
+
+            // Define priority for entry request statuses
+            var entryStatusPriority = new Dictionary<string, int>
+            {
+                {"Pending", 0},
+                {"Approved", 1},
+                {"Rejected", 2}
+            };
+
+            // Sort by status priority (Pending first) then by request date descending
+            requests = requests
+                .OrderBy(r => entryStatusPriority.ContainsKey(r.ApprovalStatus) ? entryStatusPriority[r.ApprovalStatus] : 3)
+                .ThenByDescending(r => r.RequestDateTime)
+                .ToList();
 
             return View(requests);
         }
@@ -63,7 +89,7 @@ namespace VisitorManagementSystem.Controllers
                 var isDuplicate = await _context.EntryRequestMasters.AnyAsync(r =>
                     r.VisitorId == model.VisitorId &&
                     r.EmployeeId == model.EmployeeId &&
-                    r.ApprovalStatus == "Pending Approval");
+                    r.ApprovalStatus == "Pending");
 
                 if (isDuplicate)
                 {
@@ -80,7 +106,7 @@ namespace VisitorManagementSystem.Controllers
                     DepartmentId = model.DepartmentId,
                     EmployeeId = model.EmployeeId,
                     Purpose = model.Purpose.Trim(),
-                    ApprovalStatus = "Pending Approval",
+                    ApprovalStatus = "Pending",
                     CreatedByUserId = userId,
                     RequestDateTime = DateTime.UtcNow,
                     CreatedDate = DateTime.UtcNow
@@ -88,6 +114,8 @@ namespace VisitorManagementSystem.Controllers
 
                 _context.EntryRequestMasters.Add(entryRequest);
                 await _context.SaveChangesAsync();
+
+
 
                 TempData["SuccessMessage"] = "Entry Request submitted successfully for approval!";
                 return RedirectToAction(nameof(Index));
@@ -97,7 +125,10 @@ namespace VisitorManagementSystem.Controllers
             return View(model);
         }
 
-        // 3. Pending Approvals Page - Employee Screen
+        // 3. Convert Appointment to Entry Request (Receptionist Workflow)
+
+
+        // 4. Pending Approvals Page - Employee Screen
         [HasPermission("Entry Requests", "Edit")]
         public async Task<IActionResult> Pending()
         {
@@ -112,7 +143,7 @@ namespace VisitorManagementSystem.Controllers
                 .Include(r => r.Visitor)
                 .Include(r => r.Department)
                 .Include(r => r.Employee)
-                .Where(r => r.EmployeeId == employeeId && r.ApprovalStatus == "Pending Approval")
+                .Where(r => r.EmployeeId == employeeId && r.ApprovalStatus == "Pending")
                 .OrderByDescending(r => r.RequestDateTime)
                 .ToListAsync();
 
@@ -134,7 +165,7 @@ namespace VisitorManagementSystem.Controllers
                 .Include(r => r.Visitor)
                 .Include(r => r.Department)
                 .Include(r => r.Employee)
-                .Where(r => r.EmployeeId == employeeId && r.ApprovalStatus != "Pending Approval")
+                .Where(r => r.EmployeeId == employeeId && r.ApprovalStatus != "Pending")
                 .OrderByDescending(r => r.ApprovalDateTime)
                 .ToListAsync();
 
@@ -147,6 +178,12 @@ namespace VisitorManagementSystem.Controllers
         [HasPermission("Entry Requests", "Edit")]
         public async Task<IActionResult> Approve(int id, string? approvalRemarks)
         {
+            var roleName = HttpContext.Session.GetString("RoleName");
+            if (roleName != "Employee" && roleName != "Security Guard")
+            {
+                TempData["ErrorMessage"] = "Only Employees or Security Guards can approve entry requests.";
+                return RedirectToAction("Index", "Dashboard");
+            }
             var request = await _context.EntryRequestMasters.FindAsync(id);
             if (request == null)
             {
@@ -154,38 +191,60 @@ namespace VisitorManagementSystem.Controllers
             }
 
             var employeeId = HttpContext.Session.GetInt32("EmployeeId");
-            if (employeeId == null || request.EmployeeId != employeeId)
+            if (roleName == "Employee" && (employeeId == null || request.EmployeeId != employeeId))
             {
                 TempData["ErrorMessage"] = "You are not authorized to approve this request.";
-                return RedirectToAction(nameof(Pending));
+                return roleName == "Security Guard" ? RedirectToAction(nameof(Index)) : RedirectToAction(nameof(Pending));
             }
 
-            if (request.ApprovalStatus != "Pending Approval")
+            if (request.ApprovalStatus != "Pending")
             {
                 TempData["ErrorMessage"] = "This request has already been processed.";
-                return RedirectToAction(nameof(Pending));
+                return roleName == "Security Guard" ? RedirectToAction(nameof(Index)) : RedirectToAction(nameof(Pending));
             }
 
             // Update EntryRequestMaster details
             request.ApprovalStatus = "Approved";
             request.ApprovalRemarks = approvalRemarks?.Trim() ?? "Approved";
-            request.ApprovedByEmployeeId = employeeId.Value;
+            
+            if (roleName == "Employee" && employeeId.HasValue)
+            {
+                request.ApprovedByEmployeeId = employeeId.Value;
+            }
+            else
+            {
+                // If guard approves, ApprovedByEmployeeId stays null (or is cleared)
+                request.ApprovedByEmployeeId = null;
+            }
+
             request.ApprovalDateTime = DateTime.UtcNow;
 
-            // Auto-create approved appointment record
-            var appointment = new AppointmentMaster
+            using (var transaction = await _context.Database.BeginTransactionAsync())
             {
-                VisitorId = request.VisitorId,
-                DepartmentId = request.DepartmentId,
-                EmployeeId = request.EmployeeId,
-                AppointmentDate = DateTime.SpecifyKind(DateTime.UtcNow.Date, DateTimeKind.Utc),
-                AppointmentTime = DateTime.UtcNow.TimeOfDay,
-                Purpose = request.Purpose,
-                Remarks = $"Entry Request Approved: {request.ApprovalRemarks}",
-                Status = "Approved",
-                CreatedDate = DateTime.UtcNow
-            };
+                try
+                {
+                    _context.EntryRequestMasters.Update(request);
+                    await _context.SaveChangesAsync();
 
+
+
+                    await transaction.CommitAsync();
+
+                    TempData["SuccessMessage"] = "Visitor entry request approved successfully. It is now ready for pass generation by Security.";
+                }
+                catch (Exception ex)
+                {
+                    await transaction.RollbackAsync();
+                    TempData["ErrorMessage"] = $"An error occurred during approval: {ex.Message}";
+                }
+            }
+
+            return roleName == "Security Guard" ? RedirectToAction(nameof(Index)) : RedirectToAction(nameof(Pending));
+        }
+
+        // Helper Method: Generate Gate Pass and QR Code
+        private async Task<GatePassMaster> GenerateGatePassForRequest(EntryRequestMaster request, VisitEntryMaster? visitEntry)
+        {
             // 1. Auto-generate Gate Pass Number: GP-YYYYMMDD-0001
             var todayStr = DateTime.UtcNow.ToString("yyyyMMdd");
             var prefix = $"GP-{todayStr}-";
@@ -238,33 +297,49 @@ namespace VisitorManagementSystem.Controllers
                 VisitorId = request.VisitorId,
                 EmployeeId = request.EmployeeId,
                 DepartmentId = request.DepartmentId,
+                VisitEntryId = visitEntry?.VisitEntryId,
                 IssueDateTime = DateTime.UtcNow,
-                ExpiryDateTime = DateTime.UtcNow.AddHours(24), // 24 Hour expiry
+                ExpiryDateTime = DateTime.UtcNow.AddHours(24), // Keep internal expiry
                 QRCodePath = qrCodePath,
                 Status = "Approved",
                 CreatedDate = DateTime.UtcNow
             };
 
-            using (var transaction = await _context.Database.BeginTransactionAsync())
-            {
-                try
-                {
-                    _context.EntryRequestMasters.Update(request);
-                    _context.AppointmentMasters.Add(appointment);
-                    _context.GatePassMasters.Add(gatePass);
-                    await _context.SaveChangesAsync();
-                    await transaction.CommitAsync();
+            _context.GatePassMasters.Add(gatePass);
+            await _context.SaveChangesAsync();
+            return gatePass;
+        }
 
-                    TempData["SuccessMessage"] = "Visitor entry request approved, appointment created, and gate pass generated successfully!";
-                }
-                catch (Exception ex)
-                {
-                    await transaction.RollbackAsync();
-                    TempData["ErrorMessage"] = $"An error occurred during approval: {ex.Message}";
-                }
+        // 7. Print Pass (GET) - Redirect to Visit PrintPass for unified printing
+        [HasPermission("Entry Requests", "View")]
+        public async Task<IActionResult> PrintPass(int id)
+        {
+            var visitEntry = await _context.VisitEntryMasters.FirstOrDefaultAsync(v => v.EntryRequestId == id);
+            if (visitEntry == null)
+            {
+                return NotFound();
+            }
+            return RedirectToAction("PrintPass", "Visit", new { id = visitEntry.VisitEntryId });
+        }
+
+        // 8. Details Action (GET)
+        [HasPermission("Entry Requests", "View")]
+        public async Task<IActionResult> Details(int id)
+        {
+            var request = await _context.EntryRequestMasters
+                .Include(r => r.Visitor)
+                .Include(r => r.Employee)
+                .Include(r => r.Department)
+                .Include(r => r.GatePasses)
+                    .ThenInclude(g => g.VisitEntry)
+                .FirstOrDefaultAsync(r => r.EntryRequestId == id);
+
+            if (request == null)
+            {
+                return NotFound();
             }
 
-            return RedirectToAction(nameof(Pending));
+            return View(request);
         }
 
         // 6. Reject Action (POST)
@@ -273,6 +348,12 @@ namespace VisitorManagementSystem.Controllers
         [HasPermission("Entry Requests", "Edit")]
         public async Task<IActionResult> Reject(int id, string? approvalRemarks)
         {
+            var roleName = HttpContext.Session.GetString("RoleName");
+            if (roleName != "Employee" && roleName != "Security Guard")
+            {
+                TempData["ErrorMessage"] = "Only Employees or Security Guards can reject entry requests.";
+                return RedirectToAction("Index", "Dashboard");
+            }
             var request = await _context.EntryRequestMasters.FindAsync(id);
             if (request == null)
             {
@@ -280,29 +361,41 @@ namespace VisitorManagementSystem.Controllers
             }
 
             var employeeId = HttpContext.Session.GetInt32("EmployeeId");
-            if (employeeId == null || request.EmployeeId != employeeId)
+            if (roleName == "Employee" && (employeeId == null || request.EmployeeId != employeeId))
             {
                 TempData["ErrorMessage"] = "You are not authorized to reject this request.";
-                return RedirectToAction(nameof(Pending));
+                return roleName == "Security Guard" ? RedirectToAction(nameof(Index)) : RedirectToAction(nameof(Pending));
             }
 
-            if (request.ApprovalStatus != "Pending Approval")
+            if (request.ApprovalStatus != "Pending")
             {
                 TempData["ErrorMessage"] = "This request has already been processed.";
-                return RedirectToAction(nameof(Pending));
+                return roleName == "Security Guard" ? RedirectToAction(nameof(Index)) : RedirectToAction(nameof(Pending));
             }
 
             // Update details
             request.ApprovalStatus = "Rejected";
             request.ApprovalRemarks = approvalRemarks?.Trim() ?? "Rejected";
-            request.ApprovedByEmployeeId = employeeId.Value;
+            
+            if (roleName == "Employee" && employeeId.HasValue)
+            {
+                request.ApprovedByEmployeeId = employeeId.Value;
+            }
+            else
+            {
+                request.ApprovedByEmployeeId = null;
+            }
+
             request.ApprovalDateTime = DateTime.UtcNow;
 
             _context.EntryRequestMasters.Update(request);
+            
+
+
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = "Visitor entry request rejected successfully.";
-            return RedirectToAction(nameof(Pending));
+            return roleName == "Security Guard" ? RedirectToAction(nameof(Index)) : RedirectToAction(nameof(Pending));
         }
 
         // AJAX Helper: Load employees based on department selection

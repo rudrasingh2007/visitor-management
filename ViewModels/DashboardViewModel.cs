@@ -44,12 +44,27 @@ namespace VisitorManagementSystem.ViewModels
         public int SGPassesGeneratedToday { get; set; }
 
         // Employee KPIs
-        public int EmpPendingApprovals { get; set; }
-        public int EmpApprovedToday { get; set; }
-        public int EmpRejectedToday { get; set; }
-        public int EmpVisitorsWaiting { get; set; }
+        public int EmpTodaysAppointments { get; set; }
+        public int EmpCompletedAppointments { get; set; }
+        public int EmpVisitorsToday { get; set; }
 
-        // Pending Requests for Employee Dashboard list
-        public List<EntryRequestMaster> PendingRequests { get; set; } = new();
+        // Lists for Employee Dashboard
+        public List<AppointmentMaster> PendingAppointmentRequests { get; set; } = new();
+        public List<EntryRequestMaster> PendingEntryRequests { get; set; } = new();
+        public List<VisitEntryMaster> ApprovedRequests { get; set; } = new();
+        public List<VisitEntryMaster> RejectedRequests { get; set; } = new();
+        public List<VisitEntryMaster> VisitorHistory { get; set; } = new();
+
+        // Security Guard Dashboard lists
+        public List<ReadyForPassItem> SGReadyForPassRequests { get; set; } = new();
+    }
+
+    public class ReadyForPassItem
+    {
+        public int? AppointmentId { get; set; }
+        public int? EntryRequestId { get; set; }
+        public DateTime CreatedDate { get; set; }
+        public string VisitorName { get; set; } = string.Empty;
+        public string EmployeeName { get; set; } = string.Empty;
     }
 }

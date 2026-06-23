@@ -25,10 +25,21 @@ namespace VisitorManagementSystem.Controllers
         // 1. Appointment List
         public async Task<IActionResult> Index()
         {
-            var appointments = await _context.AppointmentMasters
+            var roleName = HttpContext.Session.GetString("RoleName");
+            var employeeId = HttpContext.Session.GetInt32("EmployeeId");
+
+            var query = _context.AppointmentMasters
                 .Include(a => a.Visitor)
                 .Include(a => a.Department)
                 .Include(a => a.Employee)
+                .AsQueryable();
+
+            if (roleName == "Employee" && employeeId.HasValue)
+            {
+                query = query.Where(a => a.EmployeeId == employeeId.Value);
+            }
+
+            var appointments = await query
                 .OrderByDescending(a => a.AppointmentDate)
                 .ThenByDescending(a => a.AppointmentTime)
                 .ToListAsync();
@@ -91,10 +102,25 @@ namespace VisitorManagementSystem.Controllers
                     CreatedDate = DateTime.UtcNow
                 };
 
-                _context.AppointmentMasters.Add(appointment);
-                await _context.SaveChangesAsync();
+                using (var transaction = await _context.Database.BeginTransactionAsync())
+                {
+                    try
+                    {
+                        _context.AppointmentMasters.Add(appointment);
+                        await _context.SaveChangesAsync(); // To get AppointmentId
 
-                TempData["SuccessMessage"] = "Appointment scheduled successfully!";
+
+
+                        await transaction.CommitAsync();
+                        TempData["SuccessMessage"] = "Appointment scheduled successfully and sent for approval!";
+                    }
+                    catch (Exception ex)
+                    {
+                        await transaction.RollbackAsync();
+                        TempData["ErrorMessage"] = "Failed to create appointment: " + ex.Message;
+                    }
+                }
+
                 return RedirectToAction(nameof(Index));
             }
 
@@ -207,6 +233,114 @@ namespace VisitorManagementSystem.Controllers
             }
 
             return View(appointment);
+        }
+
+        // 5. Approve Action (POST)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Approve(int id, string? remarks)
+        {
+            var roleName = HttpContext.Session.GetString("RoleName");
+            if (roleName != "Employee")
+            {
+                TempData["ErrorMessage"] = "Only Employees can approve appointments.";
+                return RedirectToAction("Index", "Dashboard");
+            }
+
+            var appointment = await _context.AppointmentMasters.FindAsync(id);
+            if (appointment == null) return NotFound();
+
+            var employeeId = HttpContext.Session.GetInt32("EmployeeId");
+            if (appointment.EmployeeId != employeeId)
+            {
+                TempData["ErrorMessage"] = "You are not authorized to approve this appointment.";
+                return RedirectToAction("Index", "Dashboard");
+            }
+
+            if (appointment.Status != "Pending")
+            {
+                TempData["ErrorMessage"] = "This appointment has already been processed.";
+                return RedirectToAction("Index", "Dashboard");
+            }
+
+            using (var transaction = await _context.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    appointment.Status = "Approved";
+                    if (!string.IsNullOrEmpty(remarks))
+                    {
+                        appointment.Remarks = string.IsNullOrEmpty(appointment.Remarks) ? remarks : appointment.Remarks + " | " + remarks;
+                    }
+                    _context.AppointmentMasters.Update(appointment);
+
+
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    TempData["SuccessMessage"] = "Appointment approved successfully!";
+                }
+                catch (Exception)
+                {
+                    await transaction.RollbackAsync();
+                    TempData["ErrorMessage"] = "Failed to approve appointment.";
+                }
+            }
+
+            return RedirectToAction("Index", "Dashboard");
+        }
+
+        // 6. Reject Action (POST)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Reject(int id, string? remarks)
+        {
+            var roleName = HttpContext.Session.GetString("RoleName");
+            if (roleName != "Employee")
+            {
+                TempData["ErrorMessage"] = "Only Employees can reject appointments.";
+                return RedirectToAction("Index", "Dashboard");
+            }
+
+            var appointment = await _context.AppointmentMasters.FindAsync(id);
+            if (appointment == null) return NotFound();
+
+            var employeeId = HttpContext.Session.GetInt32("EmployeeId");
+            if (appointment.EmployeeId != employeeId)
+            {
+                TempData["ErrorMessage"] = "You are not authorized to reject this appointment.";
+                return RedirectToAction("Index", "Dashboard");
+            }
+
+            if (appointment.Status != "Pending")
+            {
+                TempData["ErrorMessage"] = "This appointment has already been processed.";
+                return RedirectToAction("Index", "Dashboard");
+            }
+
+            using (var transaction = await _context.Database.BeginTransactionAsync())
+            {
+                try
+                {
+                    appointment.Status = "Rejected";
+                    if (!string.IsNullOrEmpty(remarks))
+                    {
+                        appointment.Remarks = string.IsNullOrEmpty(appointment.Remarks) ? remarks : appointment.Remarks + " | " + remarks;
+                    }
+                    _context.AppointmentMasters.Update(appointment);
+
+
+                    await _context.SaveChangesAsync();
+                    await transaction.CommitAsync();
+                    TempData["SuccessMessage"] = "Appointment rejected successfully!";
+                }
+                catch (Exception)
+                {
+                    await transaction.RollbackAsync();
+                    TempData["ErrorMessage"] = "Failed to reject appointment.";
+                }
+            }
+
+            return RedirectToAction("Index", "Dashboard");
         }
 
         // AJAX helper: load employees based on department selection

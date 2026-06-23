@@ -112,12 +112,12 @@ namespace VisitorManagementSystem.Controllers
         public async Task<IActionResult> GatePass()
         {
             var total = await _context.GatePassMasters.CountAsync();
-            var closed = await _context.GatePassMasters.CountAsync(g => g.Status == "Closed");
+            var closed = await _context.GatePassMasters.CountAsync(g => g.Status == "Checked Out" || g.Status == "Closed");
             
             // Check dynamic expiry as well
             var now = DateTime.UtcNow;
-            var active = await _context.GatePassMasters.CountAsync(g => g.Status == "Active" && now <= g.ExpiryDateTime);
-            var expired = await _context.GatePassMasters.CountAsync(g => g.Status == "Expired" || (g.Status == "Active" && now > g.ExpiryDateTime));
+            var active = await _context.GatePassMasters.CountAsync(g => (g.Status == "Approved" || g.Status == "Checked In" || g.Status == "Active") && now <= g.ExpiryDateTime);
+            var expired = await _context.GatePassMasters.CountAsync(g => g.Status == "Expired" || ((g.Status == "Approved" || g.Status == "Checked In" || g.Status == "Active") && now > g.ExpiryDateTime));
 
             var gatePasses = await _context.GatePassMasters
                 .Include(g => g.Visitor)

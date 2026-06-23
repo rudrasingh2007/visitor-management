@@ -38,7 +38,11 @@ namespace VisitorManagementSystem.Helpers
                 var rights = JsonSerializer.Deserialize<List<UserPermissionDto>>(rightsJson);
                 if (rights == null) return false;
 
-                var moduleRight = rights.FirstOrDefault(r => string.Equals(r.ModuleName, moduleName, StringComparison.OrdinalIgnoreCase));
+                var normalizedModule = moduleName?.Replace(" ", "").Trim().ToLowerInvariant();
+                var moduleRight = rights.FirstOrDefault(r => {
+                    var rm = r.ModuleName?.Replace(" ", "").Trim().ToLowerInvariant();
+                    return rm != null && normalizedModule != null && (rm == normalizedModule || rm.Contains(normalizedModule) || normalizedModule.Contains(rm));
+                });
                 if (moduleRight == null) return false;
 
                 return permissionType.ToLower() switch

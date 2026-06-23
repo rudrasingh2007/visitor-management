@@ -333,7 +333,7 @@ namespace VisitorManagementSystem.Migrations
 
                     b.HasIndex("VisitorId");
 
-                    b.ToTable("GatePassMaster");
+                    b.ToTable("GatePassMaster", (string)null);
                 });
 
             modelBuilder.Entity("VisitorManagementSystem.Models.ModuleMaster", b =>

@@ -11,6 +11,7 @@ using VisitorManagementSystem.Data;
 using VisitorManagementSystem.Filters;
 using VisitorManagementSystem.Models;
 using VisitorManagementSystem.ViewModels;
+using Microsoft.AspNetCore.Authorization;
 
 namespace VisitorManagementSystem.Controllers
 {
@@ -30,13 +31,39 @@ namespace VisitorManagementSystem.Controllers
         // 1. Visit Entry List
         public async Task<IActionResult> Index()
         {
-            var visits = await _context.VisitEntryMasters
+            var roleName = HttpContext.Session.GetString("RoleName");
+            var employeeId = HttpContext.Session.GetInt32("EmployeeId");
+
+            var query = _context.VisitEntryMasters
                 .Include(v => v.Appointment)
                 .Include(v => v.Visitor)
                 .Include(v => v.Employee)
                 .Include(v => v.Department)
-                .OrderByDescending(v => v.CheckInTime)
-                .ToListAsync();
+                .AsQueryable();
+
+            if (roleName == "Employee" && employeeId.HasValue)
+            {
+                query = query.Where(v => v.EmployeeId == employeeId.Value);
+            }
+
+            var visits = await query.ToListAsync();
+
+            // Define priority mapping for statuses
+            var statusPriority = new Dictionary<string, int>
+            {
+                {"Pending", 0},
+                {"Approved", 1}, // Pass not printed will be handled later if needed
+                {"Checked In", 2},
+                {"Rejected", 3},
+                {"Checked Out", 4}
+            };
+
+            // Sort: Active (not Checked Out) first, then by status priority, then latest check‑in/create date
+            visits = visits
+                .OrderBy(v => v.VisitStatus == "Checked Out") // false (active) first
+                .ThenBy(v => statusPriority.ContainsKey(v.VisitStatus) ? statusPriority[v.VisitStatus] : 5)
+                .ThenByDescending(v => v.CheckInTime ?? v.CreatedDate)
+                .ToList();
 
             // Populate filter lists in ViewBag
             ViewBag.VisitorsList = new SelectList(await _context.VisitorMasters.OrderBy(v => v.FirstName).Select(v => new { Name = v.FirstName + " " + v.LastName }).ToListAsync(), "Name", "Name");
@@ -46,147 +73,14 @@ namespace VisitorManagementSystem.Controllers
             return View(visits);
         }
 
-        // 2. Visitor Check-In (GET)
-        public async Task<IActionResult> CheckIn(int? appointmentId)
-        {
-            await PopulateAppointmentsList(appointmentId);
-            
-            var model = new VisitEntryViewModel();
-            if (appointmentId.HasValue)
-            {
-                model.AppointmentId = appointmentId.Value;
-            }
 
-            return View(model);
-        }
-
-        // 2. Visitor Check-In (POST)
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CheckIn(VisitEntryViewModel model)
-        {
-            if (ModelState.IsValid)
-            {
-                // Validate appointment
-                var appointment = await _context.AppointmentMasters
-                    .Include(a => a.Visitor)
-                    .Include(a => a.Employee)
-                    .Include(a => a.Department)
-                    .FirstOrDefaultAsync(a => a.AppointmentId == model.AppointmentId);
-
-                if (appointment == null)
-                {
-                    ModelState.AddModelError("AppointmentId", "Selected appointment does not exist.");
-                    await PopulateAppointmentsList(model.AppointmentId);
-                    return View(model);
-                }
-
-                if (appointment.Status != "Approved")
-                {
-                    ModelState.AddModelError("AppointmentId", "Only Approved appointments can be checked in.");
-                    await PopulateAppointmentsList(model.AppointmentId);
-                    return View(model);
-                }
-
-                // Prevent duplicate check-in (only check in once per appointment)
-                var isAlreadyCheckedIn = await _context.VisitEntryMasters.AnyAsync(v => v.AppointmentId == model.AppointmentId);
-                if (isAlreadyCheckedIn)
-                {
-                    ModelState.AddModelError("AppointmentId", "Visitor has already checked in for this appointment.");
-                    await PopulateAppointmentsList(model.AppointmentId);
-                    return View(model);
-                }
-
-                // Create VisitEntryMaster record
-                var visitEntry = new VisitEntryMaster
-                {
-                    AppointmentId = appointment.AppointmentId,
-                    VisitorId = appointment.VisitorId,
-                    EmployeeId = appointment.EmployeeId,
-                    DepartmentId = appointment.DepartmentId,
-                    CheckInTime = DateTime.UtcNow,
-                    VisitStatus = "Checked In",
-                    Remarks = model.Remarks?.Trim(),
-                    CreatedDate = DateTime.UtcNow
-                };
-
-                _context.VisitEntryMasters.Add(visitEntry);
-                await _context.SaveChangesAsync();
-
-                // Link active gate pass record to this VisitEntryId
-                var gatePass = await _context.GatePassMasters
-                    .FirstOrDefaultAsync(g => g.VisitorId == appointment.VisitorId &&
-                                              g.EmployeeId == appointment.EmployeeId &&
-                                              g.Status == "Approved" &&
-                                              g.VisitEntryId == null);
-                if (gatePass != null)
-                {
-                    gatePass.VisitEntryId = visitEntry.VisitEntryId;
-                    gatePass.Status = "Checked In";
-
-                    // Re-generate QR Code payload to reflect Check-In status and timestamp
-                    var visitorName = appointment.Visitor != null ? $"{appointment.Visitor.FirstName} {appointment.Visitor.LastName}" : "Unknown";
-                    var employeeName = appointment.Employee != null ? $"{appointment.Employee.FirstName} {appointment.Employee.LastName}" : "Unknown";
-                    var checkInStr = visitEntry.CheckInTime.ToLocalTime().ToString("dd-MM-yyyy hh:mm tt");
-
-                    var qrPayload = $"Pass No: {gatePass.GatePassNumber}\n" +
-                                    $"Visitor: {visitorName}\n" +
-                                    $"Visitor ID: {gatePass.VisitorId}\n" +
-                                    $"Host: {employeeName}\n" +
-                                    $"Check-In: {checkInStr}\n" +
-                                    $"Status: Checked In\n" +
-                                    $"Link: http://localhost:5000/GatePass/Verify?number={gatePass.GatePassNumber}";
-
-                    using (var qrGenerator = new QRCodeGenerator())
-                    using (var qrCodeData = qrGenerator.CreateQrCode(qrPayload, QRCodeGenerator.ECCLevel.Q))
-                    using (var qrCode = new PngByteQRCode(qrCodeData))
-                    {
-                        byte[] qrBytes = qrCode.GetGraphic(20);
-                        var uploadFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "qrcodes");
-                        var filePath = Path.Combine(uploadFolder, $"{gatePass.GatePassNumber}.png");
-                        await System.IO.File.WriteAllBytesAsync(filePath, qrBytes);
-                    }
-
-                    _context.GatePassMasters.Update(gatePass);
-                    await _context.SaveChangesAsync();
-                }
-
-                TempData["SuccessMessage"] = "Visitor checked in successfully!";
-                return RedirectToAction(nameof(Index));
-            }
-
-            await PopulateAppointmentsList(model.AppointmentId);
-            return View(model);
-        }
-
-        // AJAX Helper: Fetch details for check-in auto-populate
         [HttpGet]
-        public async Task<JsonResult> GetAppointmentDetails(int appointmentId)
+        [AllowAnonymous]
+        public async Task<IActionResult> DebugInfo()
         {
-            var appointment = await _context.AppointmentMasters
-                .Include(a => a.Visitor)
-                .Include(a => a.Employee)
-                .Include(a => a.Department)
-                .FirstOrDefaultAsync(a => a.AppointmentId == appointmentId);
-
-            if (appointment == null)
-            {
-                return Json(null);
-            }
-
-            return Json(new
-            {
-                visitorName = appointment.Visitor?.FirstName + " " + appointment.Visitor?.LastName,
-                visitorMobile = appointment.Visitor?.MobileNumber,
-                visitorEmail = appointment.Visitor?.Email,
-                visitorCompany = appointment.Visitor?.CompanyName ?? "N/A",
-                employeeName = appointment.Employee?.FirstName + " " + appointment.Employee?.LastName,
-                employeeDesignation = appointment.Employee?.Designation,
-                departmentName = appointment.Department?.DepartmentName ?? "N/A",
-                purpose = appointment.Purpose,
-                appointmentDate = appointment.AppointmentDate.ToString("dd MMM yyyy"),
-                appointmentTime = DateTime.Today.Add(appointment.AppointmentTime).ToString("hh:mm tt")
-            });
+            var appts = await _context.AppointmentMasters.OrderByDescending(a => a.AppointmentId).Take(5).Select(a => new { a.AppointmentId, a.Status, a.AppointmentDate }).ToListAsync();
+            var visits = await _context.VisitEntryMasters.OrderByDescending(v => v.VisitEntryId).Take(5).Select(v => new { v.VisitEntryId, v.AppointmentId, v.VisitStatus, v.EntryRequestId }).ToListAsync();
+            return Json(new { appts, visits });
         }
 
         // 3. Visit Entry Details (GET)
@@ -259,18 +153,11 @@ namespace VisitorManagementSystem.Controllers
                 }
                 var visitorName = visit.Visitor != null ? $"{visit.Visitor.FirstName} {visit.Visitor.LastName}" : "Unknown";
                 var employeeName = visit.Employee != null ? $"{visit.Employee.FirstName} {visit.Employee.LastName}" : "Unknown";
-                var checkInStr = visit.CheckInTime.ToLocalTime().ToString("dd-MM-yyyy hh:mm tt");
+                var checkInStr = visit.CheckInTime.HasValue ? visit.CheckInTime.Value.ToLocalTime().ToString("dd-MM-yyyy hh:mm tt") : "Pending";
                 var checkOutStr = visit.CheckOutTime?.ToLocalTime().ToString("dd-MM-yyyy hh:mm tt") ?? "N/A";
                 
-                var qrPayload = $"Pass No: {gatePass.GatePassNumber}\n" +
-                                $"Visitor: {visitorName}\n" +
-                                $"Visitor ID: {gatePass.VisitorId}\n" +
-                                $"Host: {employeeName}\n" +
-                                $"Check-In: {checkInStr}\n" +
-                                $"Check-Out: {checkOutStr}\n" +
-                                $"Status: Checked Out\n" +
-                                $"Link: http://localhost:5000/GatePass/Verify?number={gatePass.GatePassNumber}";
-                                
+                var qrPayload = $"GATEPASS:{gatePass.GatePassNumber}|VISITOR:{visit.VisitorId}|REF:{visit.AppointmentId ?? visit.EntryRequestId ?? 0}|STATUS:CHECKED_OUT";
+
                 using (var qrGenerator = new QRCodeGenerator())
                 using (var qrCodeData = qrGenerator.CreateQrCode(qrPayload, QRCodeGenerator.ECCLevel.Q))
                 using (var qrCode = new PngByteQRCode(qrCodeData))
@@ -290,35 +177,91 @@ namespace VisitorManagementSystem.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // Helper to load approved appointments for check-in
-        private async Task PopulateAppointmentsList(int? selectedApptId = null)
+
+        // 5. Print Pass (GET)
+        [HasPermission("Visit Entry", "View")]
+        public async Task<IActionResult> PrintPass(int id)
         {
-            var checkedInApptIds = await _context.VisitEntryMasters.Select(v => v.AppointmentId).ToListAsync();
-            
-            var query = _context.AppointmentMasters
-                .Include(a => a.Visitor)
-                .Where(a => a.Status == "Approved");
+            var visit = await _context.VisitEntryMasters
+                .Include(v => v.Visitor)
+                .Include(v => v.Employee)
+                .Include(v => v.Department)
+                .Include(v => v.Appointment)
+                .FirstOrDefaultAsync(v => v.VisitEntryId == id);
 
-            // If we are editing or reloading, allow the pre-selected appointment in the list even if it is checked in
-            if (selectedApptId.HasValue)
+            if (visit == null)
             {
-                query = query.Where(a => !checkedInApptIds.Contains(a.AppointmentId) || a.AppointmentId == selectedApptId.Value);
-            }
-            else
-            {
-                query = query.Where(a => !checkedInApptIds.Contains(a.AppointmentId));
+                return NotFound();
             }
 
-            var appointments = await query
-                .OrderByDescending(a => a.AppointmentDate)
-                .Select(a => new
+            // A pass is only available for Approved, Checked In, or Checked Out statuses
+            if (visit.VisitStatus != "Approved" && visit.VisitStatus != "Checked In" && visit.VisitStatus != "Checked Out")
+            {
+                TempData["ErrorMessage"] = "Pass is not available for this status.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            // Retrieve associated gate pass record
+            var gatePass = await _context.GatePassMasters
+                .FirstOrDefaultAsync(g => g.VisitEntryId == visit.VisitEntryId);
+
+            if (gatePass == null)
+            {
+                // Auto generate if not exists
+                var todayStr = DateTime.UtcNow.ToString("yyyyMMdd");
+                var prefix = $"GP-{todayStr}-";
+                var todayCount = await _context.GatePassMasters.CountAsync(g => g.GatePassNumber.StartsWith(prefix));
+                var newSequence = todayCount + 1;
+                var gatePassNumber = $"{prefix}{newSequence:D4}";
+
+                var visitorName = visit.Visitor != null ? $"{visit.Visitor.FirstName} {visit.Visitor.LastName}" : "Unknown";
+                var employeeName = visit.Employee != null ? $"{visit.Employee.FirstName} {visit.Employee.LastName}" : "Unknown";
+
+                var qrPayload = $"Pass No: {gatePassNumber}\n" +
+                                $"Visitor: {visitorName}\n" +
+                                $"Visitor ID: {visit.VisitorId}\n" +
+                                $"Host: {employeeName}\n" +
+                                $"Check-In: {(visit.CheckInTime.HasValue ? visit.CheckInTime.Value.ToLocalTime().ToString("dd-MM-yyyy hh:mm tt") : "Pending")}\n" +
+                                $"Status: {visit.VisitStatus}\n" +
+                                $"Link: http://localhost:5000/GatePass/Verify?number={gatePassNumber}";
+
+                string qrCodePath = string.Empty;
+                using (var qrGenerator = new QRCodeGenerator())
+                using (var qrCodeData = qrGenerator.CreateQrCode(qrPayload, QRCodeGenerator.ECCLevel.Q))
+                using (var qrCode = new PngByteQRCode(qrCodeData))
                 {
-                    AppointmentId = a.AppointmentId,
-                    Text = $"Appt #{a.AppointmentId} - {a.Visitor!.FirstName} {a.Visitor!.LastName} ({a.AppointmentDate:dd MMM yyyy})"
-                })
-                .ToListAsync();
+                    byte[] qrBytes = qrCode.GetGraphic(20);
+                    var uploadFolder = Path.Combine(_webHostEnvironment.WebRootPath, "uploads", "qrcodes");
+                    if (!Directory.Exists(uploadFolder))
+                    {
+                        Directory.CreateDirectory(uploadFolder);
+                    }
+                    var fileName = $"{gatePassNumber}.png";
+                    var filePath = Path.Combine(uploadFolder, fileName);
+                    await System.IO.File.WriteAllBytesAsync(filePath, qrBytes);
+                    qrCodePath = $"/uploads/qrcodes/{fileName}";
+                }
 
-            ViewBag.ApprovedAppointments = new SelectList(appointments, "AppointmentId", "Text", selectedApptId);
+                gatePass = new GatePassMaster
+                {
+                    GatePassNumber = gatePassNumber,
+                    EntryRequestId = visit.EntryRequestId,
+                    VisitorId = visit.VisitorId,
+                    EmployeeId = visit.EmployeeId,
+                    DepartmentId = visit.DepartmentId,
+                    VisitEntryId = visit.VisitEntryId,
+                    IssueDateTime = DateTime.UtcNow,
+                    ExpiryDateTime = DateTime.UtcNow.AddHours(24),
+                    QRCodePath = qrCodePath,
+                    Status = visit.VisitStatus,
+                    CreatedDate = DateTime.UtcNow
+                };
+                _context.GatePassMasters.Add(gatePass);
+                await _context.SaveChangesAsync();
+            }
+
+            ViewBag.GatePass = gatePass;
+            return View(visit);
         }
     }
 }

@@ -38,17 +38,13 @@
                 <div class="card-header bg-transparent border-0 pt-4 px-4 d-flex justify-content-between align-items-center">
                     <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-circle-info text-primary me-2"></i>Appointment Information</h5>
                     <div>
-                        @if (Model.Status == "Pending")
+                        @if (Model.Status == "Scheduled")
                         {
-                            <span class="badge bg-warning-subtle text-warning px-3 py-2 rounded-pill fs-7"><i class="fa-solid fa-clock me-1"></i>Pending Approval</span>
+                            <span class="badge bg-warning-subtle text-warning px-3 py-2 rounded-pill fs-7"><i class="fa-solid fa-clock me-1"></i>Scheduled</span>
                         }
-                        else if (Model.Status == "Approved")
+                        else if (Model.Status == "Converted")
                         {
-                            <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill fs-7"><i class="fa-solid fa-circle-check me-1"></i>Approved</span>
-                        }
-                        else if (Model.Status == "Rejected")
-                        {
-                            <span class="badge bg-danger-subtle text-danger px-3 py-2 rounded-pill fs-7"><i class="fa-solid fa-circle-xmark me-1"></i>Rejected</span>
+                            <span class="badge bg-success-subtle text-success px-3 py-2 rounded-pill fs-7"><i class="fa-solid fa-exchange-alt me-1"></i>Converted</span>
                         }
                         else if (Model.Status == "Cancelled")
                         {

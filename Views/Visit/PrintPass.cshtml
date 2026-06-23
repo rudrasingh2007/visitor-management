@@ -1,15 +1,28 @@
-@model VisitorManagementSystem.Models.GatePassMaster
+@model VisitorManagementSystem.Models.VisitEntryMaster
 @{
     Layout = null;
-    var checkInDate = Model.VisitEntry != null ? Model.VisitEntry.CheckInTime.ToLocalTime().ToString("dd-MM-yyyy") : "Pending Check-In";
-    var checkInTime = Model.VisitEntry != null ? Model.VisitEntry.CheckInTime.ToLocalTime().ToString("hh:mm tt") : "Pending Check-In";
+    var gp = ViewBag.GatePass as VisitorManagementSystem.Models.GatePassMaster;
+    var gatePassNumber = gp?.GatePassNumber ?? "Pending Generation";
+    var qrCodePath = gp?.QRCodePath ?? "";
+    var currentStatus = Model.VisitStatus;
+    
+    // Check-in dates/times
+    var visitDate = Model.CheckInTime.HasValue 
+        ? Model.CheckInTime.Value.ToLocalTime().ToString("dd-MM-yyyy") 
+        : Model.CreatedDate.ToLocalTime().ToString("dd-MM-yyyy");
+        
+    var checkInTime = Model.CheckInTime.HasValue 
+        ? Model.CheckInTime.Value.ToLocalTime().ToString("hh:mm tt") 
+        : "Pending Check-In";
+
+    var purpose = Model.Appointment?.Purpose ?? Model.Remarks ?? "N/A";
 }
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gate Pass - @Model.GatePassNumber</title>
+    <title>Visitor Pass - @gatePassNumber</title>
     
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/5.3.0/css/bootstrap.min.css" />
@@ -121,6 +134,11 @@
             color: #475569;
         }
 
+        .status-rejected {
+            background-color: #fee2e2;
+            color: #b91c1c;
+        }
+
         .qr-section {
             text-align: center;
             margin-bottom: 16px;
@@ -228,110 +246,44 @@
         <button onclick="window.print();" class="btn btn-dark px-4 py-2 fw-bold rounded-pill shadow-sm">
             <i class="fa-solid fa-print me-2"></i>Print Pass Now
         </button>
-        <button onclick="window.close();" class="btn btn-outline-secondary px-3 py-2 rounded-pill ms-2">
+        <button onclick="closePassWindow();" class="btn btn-outline-secondary px-3 py-2 rounded-pill ms-2">
             Close Window
         </button>
     </div>
 
-    <div class="badge-container">
-        <!-- Header -->
-        <div class="badge-header">
-            <div class="org-logo">VMS Corporate</div>
-            <div class="pass-number">PASS NO: @Model.GatePassNumber</div>
-        </div>
-
-        <!-- Photo and Visitor Name -->
-        <div class="badge-photo-name-sec">
-            @if (Model.Visitor != null && !string.IsNullOrEmpty(Model.Visitor.PhotoPath))
-            {
-                <img src="@Model.Visitor.PhotoPath" class="visitor-photo" alt="Visitor Photo" />
-            }
-            else
-            {
-                <div class="photo-placeholder">
-                    <i class="fa-solid fa-user fa-3x"></i>
-                </div>
-            }
-            <div class="visitor-meta">
-                <div class="visitor-name">@(Model.Visitor?.FirstName + " " + Model.Visitor?.LastName)</div>
-                <div>
-                    @if (Model.Status == "Approved")
-                    {
-                        <span class="pass-status-badge status-approved">Approved</span>
-                    }
-                    else if (Model.Status == "Checked In")
-                    {
-                        <span class="pass-status-badge status-checkedin">Checked In</span>
-                    }
-                    else
-                    {
-                        <span class="pass-status-badge status-checkedout">Checked Out</span>
-                    }
-                </div>
-            </div>
-        </div>
-
-        <!-- QR Code -->
-        <div class="qr-section">
-            <img src="@Model.QRCodePath" class="qr-code" alt="Pass QR Code" />
-        </div>
-
-        <!-- Details Section -->
-        <div class="details-section">
-            <div class="detail-row">
-                <span class="detail-label">Mobile Number</span>
-                <span class="detail-value">@(Model.Visitor?.MobileNumber ?? "N/A")</span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-label">Company Name</span>
-                <span class="detail-value">@(Model.Visitor?.CompanyName ?? "N/A")</span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-label">Employee Host</span>
-                <span class="detail-value">@(Model.Employee?.FirstName + " " + Model.Employee?.LastName)</span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-label">Department</span>
-                <span class="detail-value">@(Model.Department?.DepartmentName ?? "N/A")</span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-label">Purpose of Visit</span>
-                <span class="detail-value">@(Model.EntryRequest?.Purpose ?? Model.VisitEntry?.Appointment?.Purpose ?? "N/A")</span>
-            </div>
-            
-            <div class="detail-row mt-2 pt-2 border-top border-light">
-                <span class="detail-label">Check-In Date</span>
-                <span class="detail-value">@checkInDate</span>
-            </div>
-            <div class="detail-row">
-                <span class="detail-label">Check-In Time</span>
-                <span class="detail-value text-primary">@checkInTime</span>
-            </div>
-        </div>
-
-        <!-- Signatures / Stamp Footer -->
-        <div class="badge-signatures">
-            <div class="sig-line">
-                <div class="sig-space"></div>
-                <div class="sig-label">Authorized Host</div>
-            </div>
-            <div class="sig-line">
-                <div class="sig-space"></div>
-                <div class="sig-label">Security Verify</div>
-            </div>
-        </div>
-    </div>
+    @{
+        var passModel = new VisitorManagementSystem.ViewModels.PassTemplateViewModel
+        {
+            GatePassNumber = gatePassNumber,
+            VisitorName = Model.Visitor?.FirstName + " " + Model.Visitor?.LastName,
+            MobileNumber = Model.Visitor?.MobileNumber,
+            EmployeeName = Model.Employee?.FirstName + " " + Model.Employee?.LastName,
+            Purpose = purpose,
+            VisitDate = visitDate,
+            CheckInTime = checkInTime,
+            Status = currentStatus,
+            PhotoPath = Model.Visitor?.PhotoPath,
+            QRCodePath = qrCodePath
+        };
+    }
+    @await Html.PartialAsync("_PassTemplate", passModel)
 
     <div class="cut-instruction">
         <i class="fa-solid fa-scissors me-1"></i>Cut along the dotted line and insert into the badge holder.
     </div>
 
+
+
     <script>
-        window.onload = function() {
-            setTimeout(function() {
-                window.print();
-            }, 600);
-        };
+        function closePassWindow() {
+            if (window.opener && window.opener !== window) {
+                window.close();
+            } else if (window.history.length > 1) {
+                window.history.back();
+            } else {
+                window.location.href = '/Dashboard';
+            }
+        }
     </script>
 </body>
 </html>

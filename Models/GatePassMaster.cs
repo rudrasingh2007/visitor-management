@@ -22,6 +22,12 @@ namespace VisitorManagementSystem.Models
         [ForeignKey("VisitEntryId")]
         public virtual VisitEntryMaster? VisitEntry { get; set; }
 
+        [Column("AppointmentId")]
+        public int? AppointmentId { get; set; }
+
+        [ForeignKey("AppointmentId")]
+        public virtual AppointmentMaster? Appointment { get; set; }
+
         [Column("EntryRequestId")]
         public int? EntryRequestId { get; set; }
 

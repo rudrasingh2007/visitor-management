@@ -135,17 +135,17 @@
                         @foreach (var item in Model.Visits)
                         {
                             var durationText = "N/A";
-                            if (item.CheckOutTime.HasValue)
+                            if (item.CheckOutTime.HasValue && item.CheckInTime.HasValue)
                             {
-                                var diff = item.CheckOutTime.Value - item.CheckInTime;
+                                var diff = item.CheckOutTime.Value - item.CheckInTime.Value;
                                 durationText = $"{(int)diff.TotalHours}h {diff.Minutes}m";
                             }
                             <tr>
                                 <td class="fw-semibold">@(item.Visitor != null ? $"{item.Visitor.FirstName} {item.Visitor.LastName}" : "Unknown")</td>
                                 <td><span class="badge bg-secondary-subtle text-secondary px-2 py-1 fs-8">@(item.Department?.DepartmentName ?? "N/A")</span></td>
                                 <td>@(item.Employee != null ? $"{item.Employee.FirstName} {item.Employee.LastName}" : "Unknown")</td>
-                                <td class="checkin-date" data-date="@item.CheckInTime.ToLocalTime().ToString("yyyy-MM-dd")" data-order="@item.CheckInTime.ToString("yyyyMMddHHmmss")">
-                                    @item.CheckInTime.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")
+                                <td class="checkin-date" data-date="@(item.CheckInTime.HasValue ? item.CheckInTime.Value.ToLocalTime().ToString("yyyy-MM-dd") : "")" data-order="@(item.CheckInTime.HasValue ? item.CheckInTime.Value.ToString("yyyyMMddHHmmss") : "")">
+                                    @(item.CheckInTime.HasValue ? item.CheckInTime.Value.ToLocalTime().ToString("dd MMM yyyy hh:mm tt") : "Pending Check-In")
                                 </td>
                                 <td>@(item.CheckOutTime.HasValue ? item.CheckOutTime.Value.ToLocalTime().ToString("dd MMM yyyy hh:mm tt") : "-")</td>
                                 <td class="fw-bold text-secondary fs-8">@durationText</td>

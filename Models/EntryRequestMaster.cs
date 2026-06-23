@@ -44,7 +44,7 @@ namespace VisitorManagementSystem.Models
         [Required]
         [StringLength(25)]
         [Column("ApprovalStatus")]
-        public string ApprovalStatus { get; set; } = "Pending Approval"; // Pending Approval, Approved, Rejected
+        public string ApprovalStatus { get; set; } = "Pending"; // Pending, Approved, Rejected
 
         [StringLength(500)]
         [Column("ApprovalRemarks")]

@@ -169,17 +169,18 @@ namespace VisitorManagementSystem.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // Check if any employees are assigned to this department
-            var hasEmployees = await _context.EmployeeMasters.AnyAsync(e => e.DepartmentId == id);
-            if (hasEmployees)
+            try
             {
-                TempData["ErrorMessage"] = $"Cannot delete department '{department.DepartmentName}' because it is assigned to existing employees.";
-                return RedirectToAction(nameof(Index));
+                _context.DepartmentMasters.Remove(department);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Department deleted successfully!";
+            }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException ex)
+            {
+                // Log exception internally (optional here as global handler could also log, but we catch it here to prevent crash)
+                TempData["ErrorMessage"] = "Cannot delete department because employees or appointments are linked to it.";
             }
 
-            _context.DepartmentMasters.Remove(department);
-            await _context.SaveChangesAsync();
-            TempData["SuccessMessage"] = "Department deleted successfully!";
             return RedirectToAction(nameof(Index));
         }
 

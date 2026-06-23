@@ -2,9 +2,9 @@
 @{
     ViewData["Title"] = "Visit Details";
     var durationText = "N/A";
-    if (Model.CheckOutTime.HasValue)
+    if (Model.CheckOutTime.HasValue && Model.CheckInTime.HasValue)
     {
-        var diff = Model.CheckOutTime.Value - Model.CheckInTime;
+        var diff = Model.CheckOutTime.Value - Model.CheckInTime.Value;
         durationText = $"{(int)diff.TotalHours} hours {diff.Minutes} minutes";
     }
 }
@@ -55,7 +55,7 @@
                     <div class="row g-4">
                         <div class="col-12 col-sm-6 col-md-4">
                             <span class="text-muted d-block small uppercase fw-semibold mb-1">Check-In Time</span>
-                            <strong class="text-dark"><i class="fa-solid fa-clock-lock text-success me-1"></i>@Model.CheckInTime.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")</strong>
+                            <strong class="text-dark"><i class="fa-solid fa-clock-lock text-success me-1"></i>@Model.CheckInTime?.ToLocalTime().ToString("dd MMM yyyy hh:mm tt") ?? "Pending"</strong>
                         </div>
                         <div class="col-12 col-sm-6 col-md-4">
                             <span class="text-muted d-block small uppercase fw-semibold mb-1">Check-Out Time</span>
@@ -76,14 +76,7 @@
                             <strong class="text-primary fs-6"><i class="fa-solid fa-hourglass-half me-1"></i>@durationText</strong>
                         </div>
 
-                        <div class="col-12 col-md-12">
-                            <span class="text-muted d-block small uppercase fw-semibold mb-1">Associated Appointment</span>
-                            <strong class="text-dark">
-                                <a asp-controller="Appointment" asp-action="Details" asp-route-id="@Model.AppointmentId" class="text-decoration-none">
-                                    View Appointment Details (@(Model.Appointment?.AppointmentDate.ToString("dd MMM yyyy") ?? ""))
-                                </a>
-                            </strong>
-                        </div>
+
 
                         <div class="col-12">
                             <hr class="border-secondary border-opacity-10 my-1" />
@@ -100,20 +93,7 @@
                 </div>
             </div>
 
-            <!-- Original Appointment Purpose details -->
-            @if (Model.Appointment != null)
-            {
-                <div class="card border-0 shadow-sm rounded-4">
-                    <div class="card-header bg-transparent border-0 pt-4 px-4">
-                        <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-comment-dots text-primary me-2"></i>Original Purpose of Visit</h6>
-                    </div>
-                    <div class="card-body p-4 pt-2 fs-7">
-                        <div class="p-3 bg-light rounded-3">
-                            @Model.Appointment.Purpose
-                        </div>
-                    </div>
-                </div>
-            }
+
         </div>
 
         <!-- Right Side: Visitor & Employee Info Cards -->

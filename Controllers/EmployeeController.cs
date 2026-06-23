@@ -272,10 +272,16 @@ namespace VisitorManagementSystem.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            employee.Status = "Inactive";
-            _context.Update(employee);
-            await _context.SaveChangesAsync();
-            TempData["SuccessMessage"] = "Employee deactivated successfully!";
+            try
+            {
+                _context.EmployeeMasters.Remove(employee);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Employee deleted successfully!";
+            }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException)
+            {
+                TempData["ErrorMessage"] = "Cannot delete employee because appointments, users, or visit records are linked to this employee.";
+            }
             return RedirectToAction(nameof(Index));
         }
 

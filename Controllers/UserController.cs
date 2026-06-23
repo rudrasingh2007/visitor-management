@@ -361,9 +361,16 @@ namespace VisitorManagementSystem.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            _context.UserMasters.Remove(user);
-            await _context.SaveChangesAsync();
-            TempData["SuccessMessage"] = "User deleted successfully!";
+            try
+            {
+                _context.UserMasters.Remove(user);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "User deleted successfully!";
+            }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException)
+            {
+                TempData["ErrorMessage"] = "Cannot delete user because related records exist.";
+            }
             return RedirectToAction(nameof(Index));
         }
 

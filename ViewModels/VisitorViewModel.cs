@@ -20,8 +20,8 @@ namespace VisitorManagementSystem.ViewModels
         public string Gender { get; set; } = "Male"; // Male, Female, Other
 
         [Required(ErrorMessage = "Mobile Number is required.")]
-        [StringLength(15, ErrorMessage = "Mobile number cannot exceed 15 characters.")]
-        [RegularExpression(@"^[0-9]{10,15}$", ErrorMessage = "Mobile number must be between 10 and 15 digits.")]
+        [StringLength(10, MinimumLength = 10, ErrorMessage = "Mobile Number must contain exactly 10 digits.")]
+        [RegularExpression(@"^[0-9]{10}$", ErrorMessage = "Mobile Number must contain exactly 10 digits.")]
         public string MobileNumber { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Email Address is required.")]
@@ -29,14 +29,20 @@ namespace VisitorManagementSystem.ViewModels
         [StringLength(100, ErrorMessage = "Email cannot exceed 100 characters.")]
         public string Email { get; set; } = string.Empty;
 
+        [Required(ErrorMessage = "Address is required.")]
         [StringLength(250, ErrorMessage = "Address cannot exceed 250 characters.")]
-        public string? Address { get; set; }
+        [RegularExpression(@"^(?!\s*$).+", ErrorMessage = "Address is required.")]
+        public string Address { get; set; } = string.Empty;
 
+        [Required(ErrorMessage = "City is required.")]
         [StringLength(50, ErrorMessage = "City cannot exceed 50 characters.")]
-        public string? City { get; set; }
+        [RegularExpression(@"^(?!\s*$).+", ErrorMessage = "City is required.")]
+        public string City { get; set; } = string.Empty;
 
+        [Required(ErrorMessage = "State is required.")]
         [StringLength(50, ErrorMessage = "State cannot exceed 50 characters.")]
-        public string? State { get; set; }
+        [RegularExpression(@"^(?!\s*$).+", ErrorMessage = "State is required.")]
+        public string State { get; set; } = string.Empty;
 
         [StringLength(100, ErrorMessage = "Company Name cannot exceed 100 characters.")]
         public string? CompanyName { get; set; }
@@ -54,8 +60,5 @@ namespace VisitorManagementSystem.ViewModels
         [Required(ErrorMessage = "Status is required.")]
         [StringLength(15)]
         public string Status { get; set; } = "Active"; // Active, Inactive
-
-        public string? PhotoBase64 { get; set; }
-        public bool RemoveExistingPhoto { get; set; }
     }
 }

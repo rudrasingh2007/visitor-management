@@ -80,32 +80,26 @@
             <h6 class="fw-bold text-dark mb-3"><i class="fa-solid fa-sliders text-primary me-2"></i>Filter Report Data</h6>
             <div class="row g-3">
                 <!-- Status Filter -->
-                <div class="col-12 col-sm-6 col-md-3 col-lg-2">
+                <div class="col-12 col-sm-6 col-md-3">
                     <label class="form-label fw-semibold text-muted small mb-1">Status</label>
                     <select id="statusFilter" class="form-select rounded-2">
                         <option value="">All Statuses</option>
-                        <option value="Active">Active</option>
-                        <option value="Closed">Closed</option>
+                        <option value="Approved">Approved</option>
+                        <option value="Checked In">Checked In</option>
+                        <option value="Checked Out">Checked Out</option>
                         <option value="Expired">Expired</option>
                     </select>
                 </div>
-                <!-- Department Filter -->
-                <div class="col-12 col-sm-6 col-md-3 col-lg-2">
-                    <label class="form-label fw-semibold text-muted small mb-1">Department</label>
-                    <select id="deptFilter" class="form-select rounded-2" asp-items="ViewBag.DepartmentsList">
-                        <option value="">All Departments</option>
-                    </select>
-                </div>
                 <!-- Visitor Filter -->
-                <div class="col-12 col-sm-6 col-md-3 col-lg-2">
+                <div class="col-12 col-sm-6 col-md-3">
                     <label class="form-label fw-semibold text-muted small mb-1">Visitor</label>
                     <select id="visitorFilter" class="form-select rounded-2" asp-items="ViewBag.VisitorsList">
                         <option value="">All Visitors</option>
                     </select>
                 </div>
                 <!-- Employee Filter -->
-                <div class="col-12 col-sm-6 col-md-3 col-lg-2">
-                    <label class="form-label fw-semibold text-muted small mb-1">Employee Host</label>
+                <div class="col-12 col-sm-6 col-md-3">
+                    <label class="form-label fw-semibold text-muted small mb-1">Employee Name</label>
                     <select id="employeeFilter" class="form-select rounded-2" asp-items="ViewBag.EmployeesList">
                         <option value="">All Employees</option>
                     </select>
@@ -136,34 +130,42 @@
                 <table class="table table-hover align-middle" id="gatePassReportTable" style="width:100%;">
                     <thead class="table-light text-muted uppercase fs-7 fw-semibold">
                         <tr>
-                            <th>Pass Number</th>
+                            <th>Gate Pass Number</th>
                             <th>Visitor Name</th>
-                            <th>Department</th>
-                            <th>Employee Host</th>
-                            <th>Issue Time</th>
-                            <th>Expiry Time</th>
+                            <th>Employee Name</th>
+                            <th>Check-In Time</th>
+                            <th>Check-Out Time</th>
                             <th>Status</th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var item in Model.GatePasses)
                         {
-                            var isExpired = item.Status == "Active" && DateTime.UtcNow > item.ExpiryDateTime;
+                            var isExpired = (item.Status == "Approved" || item.Status == "Checked In" || item.Status == "Active") && DateTime.UtcNow > item.ExpiryDateTime;
                             var currentStatus = isExpired ? "Expired" : item.Status;
 
                             <tr>
                                 <td class="fw-bold text-dark"><i class="fa-solid fa-ticket text-primary-emphasis me-1"></i>@item.GatePassNumber</td>
                                 <td class="fw-semibold">@(item.Visitor != null ? $"{item.Visitor.FirstName} {item.Visitor.LastName}" : "Unknown")</td>
-                                <td><span class="badge bg-secondary-subtle text-secondary px-2 py-1 fs-8">@(item.Department?.DepartmentName ?? "N/A")</span></td>
                                 <td>@(item.Employee != null ? $"{item.Employee.FirstName} {item.Employee.LastName}" : "Unknown")</td>
-                                <td class="issue-date" data-date="@item.IssueDateTime.ToLocalTime().ToString("yyyy-MM-dd")" data-order="@item.IssueDateTime.ToString("yyyyMMddHHmmss")">
-                                    @item.IssueDateTime.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")
+                                <td class="issue-date" data-date="@(item.VisitEntry?.CheckInTime != null ? item.VisitEntry.CheckInTime.Value.ToLocalTime().ToString("yyyy-MM-dd") : "")" data-order="@(item.VisitEntry?.CheckInTime != null ? item.VisitEntry.CheckInTime.Value.ToString("yyyyMMddHHmmss") : "")">
+                                    @(item.VisitEntry?.CheckInTime != null ? item.VisitEntry.CheckInTime.Value.ToLocalTime().ToString("dd MMM yyyy hh:mm tt") : "N/A")
                                 </td>
-                                <td>@item.ExpiryDateTime.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")</td>
                                 <td>
-                                    @if (currentStatus == "Active")
+                                    @(item.VisitEntry?.CheckOutTime != null ? item.VisitEntry.CheckOutTime.Value.ToLocalTime().ToString("dd MMM yyyy hh:mm tt") : "N/A")
+                                </td>
+                                <td>
+                                    @if (currentStatus == "Approved")
                                     {
-                                        <span class="badge bg-success-subtle text-success px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-circle-check me-1"></i>Active</span>
+                                        <span class="badge bg-primary-subtle text-primary px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-circle-check me-1"></i>Approved</span>
+                                    }
+                                    else if (currentStatus == "Checked In")
+                                    {
+                                        <span class="badge bg-success-subtle text-success px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-circle-play me-1"></i>Checked In</span>
+                                    }
+                                    else if (currentStatus == "Checked Out" || currentStatus == "Closed")
+                                    {
+                                        <span class="badge bg-secondary-subtle text-secondary px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-circle-stop me-1"></i>Checked Out</span>
                                     }
                                     else if (currentStatus == "Expired")
                                     {
@@ -171,7 +173,7 @@
                                     }
                                     else
                                     {
-                                        <span class="badge bg-secondary-subtle text-secondary px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-lock me-1"></i>Closed</span>
+                                        <span class="badge bg-secondary-subtle text-secondary px-3 py-2 fs-8 rounded-pill">@currentStatus</span>
                                     }
                                 </td>
                             </tr>
@@ -199,25 +201,25 @@
                     "search": "_INPUT_",
                     "searchPlaceholder": "Search report..."
                 },
-                "order": [[4, "desc"]], // Default order by Issue Time desc
+                "order": [[3, "desc"]], // Default order by Check-In Time desc
                 "buttons": [
                     {
                         extend: 'excel',
                         className: 'btn btn-sm btn-outline-success me-1 rounded-2',
                         text: '<i class="fa-solid fa-file-excel me-1"></i> Excel',
-                        exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6] }
+                        exportOptions: { columns: [0, 1, 2, 3, 4, 5] }
                     },
                     {
                         extend: 'pdf',
                         className: 'btn btn-sm btn-outline-danger me-1 rounded-2',
                         text: '<i class="fa-solid fa-file-pdf me-1"></i> PDF',
-                        exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6] }
+                        exportOptions: { columns: [0, 1, 2, 3, 4, 5] }
                     },
                     {
                         extend: 'print',
                         className: 'btn btn-sm btn-outline-secondary rounded-2',
                         text: '<i class="fa-solid fa-print me-1"></i> Print Report',
-                        exportOptions: { columns: [0, 1, 2, 3, 4, 5, 6] }
+                        exportOptions: { columns: [0, 1, 2, 3, 4, 5] }
                     }
                 ],
                 "dom": "<'row mb-3'<'col-sm-12 col-md-6'lB><'col-sm-12 col-md-6'f>>" +
@@ -228,13 +230,7 @@
             // Status Filter Dropdown
             $('#statusFilter').on('change', function() {
                 var val = $(this).val();
-                table.column(6).search(val ? '^\\s*' + val + '\\s*$' : '', true, false).draw();
-            });
-
-            // Department Filter Dropdown
-            $('#deptFilter').on('change', function() {
-                var val = $(this).val();
-                table.column(2).search(val ? '^\\s*' + val + '\\s*$' : '', true, false).draw();
+                table.column(5).search(val ? '^\\s*' + val + '\\s*$' : '', true, false).draw();
             });
 
             // Visitor Filter Dropdown
@@ -246,7 +242,7 @@
             // Employee Filter Dropdown
             $('#employeeFilter').on('change', function() {
                 var val = $(this).val();
-                table.column(3).search(val ? '^\\s*' + val + '\\s*$' : '', true, false).draw();
+                table.column(2).search(val ? '^\\s*' + val + '\\s*$' : '', true, false).draw();
             });
 
             // Custom Date Range filter
@@ -283,16 +279,14 @@
             // Reset Filters
             $('#btnResetFilters').click(function() {
                 $('#statusFilter').val('');
-                $('#deptFilter').val('');
                 $('#visitorFilter').val('');
                 $('#employeeFilter').val('');
                 $('#startDateFilter').val('');
                 $('#endDateFilter').val('');
                 
-                table.column(6).search('');
-                table.column(2).search('');
+                table.column(5).search('');
                 table.column(1).search('');
-                table.column(3).search('');
+                table.column(2).search('');
                 table.draw();
             });
         });

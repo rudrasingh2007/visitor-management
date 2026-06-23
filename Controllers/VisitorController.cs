@@ -86,25 +86,6 @@ namespace VisitorManagementSystem.Controllers
                 if (ModelState.IsValid)
                 {
                     string? photoPath = null;
-                    if (!string.IsNullOrEmpty(model.PhotoBase64))
-                    {
-                        string uploadsFolder = Path.Combine(_hostEnvironment.WebRootPath, "uploads", "visitors");
-                        if (!Directory.Exists(uploadsFolder))
-                        {
-                            Directory.CreateDirectory(uploadsFolder);
-                        }
-
-                        // Parse the base64 data URL: e.g. "data:image/jpeg;base64,/9j/4AAQSkZJRg..."
-                        var base64Parts = model.PhotoBase64.Split(',');
-                        string base64Data = base64Parts.Length > 1 ? base64Parts[1] : base64Parts[0];
-                        byte[] imageBytes = Convert.FromBase64String(base64Data);
-
-                        string uniqueFileName = Guid.NewGuid().ToString() + ".jpg";
-                        string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                        await System.IO.File.WriteAllBytesAsync(filePath, imageBytes);
-                        photoPath = "/uploads/visitors/" + uniqueFileName;
-                    }
 
                     var visitor = new VisitorMaster
                     {
@@ -200,50 +181,6 @@ namespace VisitorManagementSystem.Controllers
 
                     string? photoPath = visitor.PhotoPath;
 
-                    // Handle photo removal flag
-                    if (model.RemoveExistingPhoto)
-                    {
-                        if (!string.IsNullOrEmpty(visitor.PhotoPath))
-                        {
-                            string oldFilePath = Path.Combine(_hostEnvironment.WebRootPath, visitor.PhotoPath.TrimStart('/'));
-                            if (System.IO.File.Exists(oldFilePath))
-                            {
-                                System.IO.File.Delete(oldFilePath);
-                            }
-                        }
-                        photoPath = null;
-                    }
-
-                    // Handle new camera capture
-                    if (!string.IsNullOrEmpty(model.PhotoBase64))
-                    {
-                        // Delete previous photo file if it exists on disk
-                        if (!string.IsNullOrEmpty(visitor.PhotoPath))
-                        {
-                            string oldFilePath = Path.Combine(_hostEnvironment.WebRootPath, visitor.PhotoPath.TrimStart('/'));
-                            if (System.IO.File.Exists(oldFilePath))
-                            {
-                                System.IO.File.Delete(oldFilePath);
-                            }
-                        }
-
-                        string uploadsFolder = Path.Combine(_hostEnvironment.WebRootPath, "uploads", "visitors");
-                        if (!Directory.Exists(uploadsFolder))
-                        {
-                            Directory.CreateDirectory(uploadsFolder);
-                        }
-
-                        var base64Parts = model.PhotoBase64.Split(',');
-                        string base64Data = base64Parts.Length > 1 ? base64Parts[1] : base64Parts[0];
-                        byte[] imageBytes = Convert.FromBase64String(base64Data);
-
-                        string uniqueFileName = Guid.NewGuid().ToString() + ".jpg";
-                        string filePath = Path.Combine(uploadsFolder, uniqueFileName);
-
-                        await System.IO.File.WriteAllBytesAsync(filePath, imageBytes);
-                        photoPath = "/uploads/visitors/" + uniqueFileName;
-                    }
-
                     visitor.FirstName = model.FirstName;
                     visitor.LastName = model.LastName;
                     visitor.Gender = model.Gender;
@@ -301,19 +238,27 @@ namespace VisitorManagementSystem.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // Remove associated photo file if it exists
-            if (!string.IsNullOrEmpty(visitor.PhotoPath))
+            try
             {
-                string filePath = Path.Combine(_hostEnvironment.WebRootPath, visitor.PhotoPath.TrimStart('/'));
-                if (System.IO.File.Exists(filePath))
+                // Remove associated photo file if it exists
+                if (!string.IsNullOrEmpty(visitor.PhotoPath))
                 {
-                    System.IO.File.Delete(filePath);
+                    string filePath = Path.Combine(_hostEnvironment.WebRootPath, visitor.PhotoPath.TrimStart('/'));
+                    if (System.IO.File.Exists(filePath))
+                    {
+                        System.IO.File.Delete(filePath);
+                    }
                 }
+
+                _context.VisitorMasters.Remove(visitor);
+                await _context.SaveChangesAsync();
+                TempData["SuccessMessage"] = "Visitor record deleted successfully!";
+            }
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException)
+            {
+                TempData["ErrorMessage"] = "Cannot delete visitor because related appointment or visit records exist.";
             }
 
-            _context.VisitorMasters.Remove(visitor);
-            await _context.SaveChangesAsync();
-            TempData["SuccessMessage"] = "Visitor record deleted successfully!";
             return RedirectToAction(nameof(Index));
         }
     }
