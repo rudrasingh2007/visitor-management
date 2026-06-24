@@ -41,6 +41,19 @@ namespace VisitorManagementSystem.Controllers
                 
                 if (app == null) return NotFound();
 
+                if (app.Status != "Approved")
+                {
+                    TempData["ErrorMessage"] = "Cannot generate a pass. The appointment is not in an 'Approved' state.";
+                    return RedirectToAction("Index", "Dashboard");
+                }
+
+                var existingPass = await _context.GatePassMasters.AnyAsync(g => g.AppointmentId == appointmentId);
+                if (existingPass)
+                {
+                    TempData["ErrorMessage"] = "A Gate Pass has already been generated for this appointment.";
+                    return RedirectToAction("Index", "Dashboard");
+                }
+
                 model.AppointmentId = app.AppointmentId;
                 model.Visitor = app.Visitor;
                 model.Employee = app.Employee;
@@ -61,6 +74,19 @@ namespace VisitorManagementSystem.Controllers
                     .FirstOrDefaultAsync(r => r.EntryRequestId == entryRequestId);
                 
                 if (req == null) return NotFound();
+
+                if (req.ApprovalStatus != "Approved")
+                {
+                    TempData["ErrorMessage"] = "Cannot generate a pass. The entry request is not in an 'Approved' state.";
+                    return RedirectToAction("Index", "Dashboard");
+                }
+
+                var existingPass = await _context.GatePassMasters.AnyAsync(g => g.EntryRequestId == entryRequestId);
+                if (existingPass)
+                {
+                    TempData["ErrorMessage"] = "A Gate Pass has already been generated for this entry request.";
+                    return RedirectToAction("Index", "Dashboard");
+                }
 
                 model.EntryRequestId = req.EntryRequestId;
                 model.Visitor = req.Visitor;
@@ -109,6 +135,20 @@ namespace VisitorManagementSystem.Controllers
             {
                 var app = await _context.AppointmentMasters.Include(a => a.Visitor).FirstOrDefaultAsync(a => a.AppointmentId == appointmentId);
                 if (app == null) return NotFound();
+                
+                if (app.Status != "Approved")
+                {
+                    TempData["ErrorMessage"] = "Cannot generate a pass. The appointment is not in an 'Approved' state.";
+                    return RedirectToAction("Index", "Dashboard");
+                }
+
+                var existingPass = await _context.GatePassMasters.AnyAsync(g => g.AppointmentId == appointmentId);
+                if (existingPass)
+                {
+                    TempData["ErrorMessage"] = "A Gate Pass has already been generated for this appointment.";
+                    return RedirectToAction("Index", "Dashboard");
+                }
+
                 visitor = app.Visitor;
                 employeeId = app.EmployeeId;
                 departmentId = app.DepartmentId;
@@ -118,6 +158,20 @@ namespace VisitorManagementSystem.Controllers
             {
                 var req = await _context.EntryRequestMasters.Include(r => r.Visitor).FirstOrDefaultAsync(r => r.EntryRequestId == entryRequestId);
                 if (req == null) return NotFound();
+                
+                if (req.ApprovalStatus != "Approved")
+                {
+                    TempData["ErrorMessage"] = "Cannot generate a pass. The entry request is not in an 'Approved' state.";
+                    return RedirectToAction("Index", "Dashboard");
+                }
+
+                var existingPass = await _context.GatePassMasters.AnyAsync(g => g.EntryRequestId == entryRequestId);
+                if (existingPass)
+                {
+                    TempData["ErrorMessage"] = "A Gate Pass has already been generated for this entry request.";
+                    return RedirectToAction("Index", "Dashboard");
+                }
+
                 visitor = req.Visitor;
                 employeeId = req.EmployeeId;
                 departmentId = req.DepartmentId;

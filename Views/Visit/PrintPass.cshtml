@@ -243,9 +243,12 @@
 <body>
 
     <div class="no-print no-print-btn">
-        <button onclick="window.print();" class="btn btn-dark px-4 py-2 fw-bold rounded-pill shadow-sm">
-            <i class="fa-solid fa-print me-2"></i>Print Pass Now
-        </button>
+        @if (currentStatus != "Checked Out")
+        {
+            <button onclick="window.print();" class="btn btn-dark px-4 py-2 fw-bold rounded-pill shadow-sm">
+                <i class="fa-solid fa-print me-2"></i>Print Pass Now
+            </button>
+        }
         <button onclick="closePassWindow();" class="btn btn-outline-secondary px-3 py-2 rounded-pill ms-2">
             Close Window
         </button>

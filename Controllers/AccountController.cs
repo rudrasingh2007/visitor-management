@@ -59,7 +59,7 @@ namespace VisitorManagementSystem.Controllers
                             FullName = "Rudra Singh",
                             Email = "rudra123@gmail.com",
                             MobileNumber = "9876543211",
-                            Password = "rudra123",
+                            Password = PasswordHelper.HashPassword("rudra123"),
                             RoleId = employeeRole.RoleId,
                             Status = "Active",
                             EmployeeId = employee.EmployeeId,
@@ -82,8 +82,9 @@ namespace VisitorManagementSystem.Controllers
                 .Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.Username == username);
 
-            // Plaintext password comparison as requested
-            if (user == null || user.Password != password)
+            // Hashed password comparison
+            var hashedPassword = PasswordHelper.HashPassword(password);
+            if (user == null || user.Password != hashedPassword)
             {
                 ViewBag.Error = "Invalid username or password.";
                 return View();

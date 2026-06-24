@@ -8,6 +8,7 @@ using VisitorManagementSystem.Data;
 using VisitorManagementSystem.Filters;
 using VisitorManagementSystem.Models;
 using VisitorManagementSystem.ViewModels;
+using VisitorManagementSystem.Helpers;
 
 namespace VisitorManagementSystem.Controllers
 {
@@ -149,7 +150,7 @@ namespace VisitorManagementSystem.Controllers
                         FullName = model.FullName,
                         Email = model.Email,
                         MobileNumber = model.MobileNumber,
-                        Password = model.Password ?? string.Empty,
+                        Password = PasswordHelper.HashPassword(model.Password ?? string.Empty),
                         RoleId = model.RoleId,
                         Status = model.Status,
                         EmployeeId = model.EmployeeId,
@@ -392,7 +393,7 @@ namespace VisitorManagementSystem.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            user.Password = newPassword; // Store in plaintext as requested
+            user.Password = PasswordHelper.HashPassword(newPassword);
             _context.Update(user);
             await _context.SaveChangesAsync();
 
