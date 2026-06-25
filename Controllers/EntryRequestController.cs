@@ -192,9 +192,9 @@ namespace VisitorManagementSystem.Controllers
         public async Task<IActionResult> Approve(int id, string? approvalRemarks)
         {
             var roleName = HttpContext.Session.GetString("RoleName");
-            if (roleName != "Employee" && roleName != "Security Guard")
+            if (roleName != "Employee" && roleName != "Security Guard" && roleName != "Admin")
             {
-                TempData["ErrorMessage"] = "Only Employees or Security Guards can approve entry requests.";
+                TempData["ErrorMessage"] = "Only Employees, Admins, or Security Guards can approve entry requests.";
                 return RedirectToAction("Index", "Dashboard");
             }
             var request = await _context.EntryRequestMasters.FindAsync(id);
@@ -207,13 +207,13 @@ namespace VisitorManagementSystem.Controllers
             if (roleName == "Employee" && (employeeId == null || request.EmployeeId != employeeId))
             {
                 TempData["ErrorMessage"] = "You are not authorized to approve this request.";
-                return roleName == "Security Guard" ? RedirectToAction(nameof(Index)) : RedirectToAction(nameof(Pending));
+                return RedirectToAction(nameof(Pending));
             }
 
             if (request.ApprovalStatus != "Pending")
             {
                 TempData["ErrorMessage"] = "This request has already been processed.";
-                return roleName == "Security Guard" ? RedirectToAction(nameof(Index)) : RedirectToAction(nameof(Pending));
+                return (roleName == "Security Guard" || roleName == "Admin") ? RedirectToAction(nameof(Index)) : RedirectToAction(nameof(Pending));
             }
 
             // Update EntryRequestMaster details
@@ -253,7 +253,7 @@ namespace VisitorManagementSystem.Controllers
                 }
             }
 
-            return roleName == "Security Guard" ? RedirectToAction(nameof(Index)) : RedirectToAction(nameof(Pending));
+            return (roleName == "Security Guard" || roleName == "Admin") ? RedirectToAction(nameof(Index)) : RedirectToAction(nameof(Pending));
         }
 
         // Helper Method: Generate Gate Pass and QR Code
@@ -363,9 +363,9 @@ namespace VisitorManagementSystem.Controllers
         public async Task<IActionResult> Reject(int id, string? approvalRemarks)
         {
             var roleName = HttpContext.Session.GetString("RoleName");
-            if (roleName != "Employee" && roleName != "Security Guard")
+            if (roleName != "Employee" && roleName != "Security Guard" && roleName != "Admin")
             {
-                TempData["ErrorMessage"] = "Only Employees or Security Guards can reject entry requests.";
+                TempData["ErrorMessage"] = "Only Employees, Admins, or Security Guards can reject entry requests.";
                 return RedirectToAction("Index", "Dashboard");
             }
             var request = await _context.EntryRequestMasters.FindAsync(id);
@@ -378,13 +378,13 @@ namespace VisitorManagementSystem.Controllers
             if (roleName == "Employee" && (employeeId == null || request.EmployeeId != employeeId))
             {
                 TempData["ErrorMessage"] = "You are not authorized to reject this request.";
-                return roleName == "Security Guard" ? RedirectToAction(nameof(Index)) : RedirectToAction(nameof(Pending));
+                return RedirectToAction(nameof(Pending));
             }
 
             if (request.ApprovalStatus != "Pending")
             {
                 TempData["ErrorMessage"] = "This request has already been processed.";
-                return roleName == "Security Guard" ? RedirectToAction(nameof(Index)) : RedirectToAction(nameof(Pending));
+                return (roleName == "Security Guard" || roleName == "Admin") ? RedirectToAction(nameof(Index)) : RedirectToAction(nameof(Pending));
             }
 
             // Update details
@@ -409,7 +409,7 @@ namespace VisitorManagementSystem.Controllers
             await _context.SaveChangesAsync();
 
             TempData["SuccessMessage"] = "Visitor entry request rejected successfully.";
-            return roleName == "Security Guard" ? RedirectToAction(nameof(Index)) : RedirectToAction(nameof(Pending));
+            return (roleName == "Security Guard" || roleName == "Admin") ? RedirectToAction(nameof(Index)) : RedirectToAction(nameof(Pending));
         }
 
         // AJAX Helper: Load employees based on department selection
