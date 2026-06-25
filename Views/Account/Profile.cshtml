@@ -13,9 +13,16 @@
     </nav>
 
     <!-- Header -->
-    <div class="mb-4">
-        <h3 class="fw-bold text-dark mb-1"><i class="fa-solid fa-id-card-clip me-2 text-primary"></i>My Profile</h3>
-        <p class="text-muted mb-0">View your account information and credentials.</p>
+    <div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-3">
+        <div>
+            <h3 class="fw-bold text-dark mb-1"><i class="fa-solid fa-id-card-clip me-2 text-primary"></i>My Profile</h3>
+            <p class="text-muted mb-0">View your account information and credentials.</p>
+        </div>
+        <div>
+            <a asp-controller="Dashboard" asp-action="Index" class="btn btn-outline-secondary px-3 py-2 fw-semibold rounded-2">
+                <i class="fa-solid fa-arrow-left me-1"></i>Back to Dashboard
+            </a>
+        </div>
     </div>
 
     <div class="row">
