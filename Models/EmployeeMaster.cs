@@ -49,8 +49,8 @@ namespace VisitorManagementSystem.Models
         public string Email { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Mobile Number is required.")]
-        [StringLength(15, ErrorMessage = "Mobile number cannot exceed 15 characters.")]
-        [RegularExpression(@"^[0-9]{10,15}$", ErrorMessage = "Mobile number must be between 10 and 15 digits.")]
+        [StringLength(10, MinimumLength = 10, ErrorMessage = "Mobile number must contain exactly 10 digits.")]
+        [RegularExpression(@"^[0-9]{10}$", ErrorMessage = "Mobile number must contain exactly 10 digits.")]
         [Column("MobileNumber")]
         public string MobileNumber { get; set; } = string.Empty;
 

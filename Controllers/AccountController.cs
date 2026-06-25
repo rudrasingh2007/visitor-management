@@ -10,15 +10,19 @@ using VisitorManagementSystem.Data;
 using VisitorManagementSystem.Helpers;
 using VisitorManagementSystem.Models;
 
+using Microsoft.AspNetCore.DataProtection;
+
 namespace VisitorManagementSystem.Controllers
 {
     public class AccountController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IDataProtectionProvider _dataProtectionProvider;
 
-        public AccountController(ApplicationDbContext context)
+        public AccountController(ApplicationDbContext context, IDataProtectionProvider dataProtectionProvider)
         {
             _context = context;
+            _dataProtectionProvider = dataProtectionProvider;
         }
 
         [HttpGet]
@@ -34,11 +38,18 @@ namespace VisitorManagementSystem.Controllers
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> Login(string username, string password, bool rememberMe = false)
+        public async Task<IActionResult> Login(string username, string password, string captchaCode, bool rememberMe = false)
         {
             if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
             {
                 ViewBag.Error = "Username and Password are required.";
+                return View();
+            }
+
+            var sessionCaptcha = HttpContext.Session.GetString("CaptchaCode");
+            if (string.IsNullOrEmpty(captchaCode) || string.IsNullOrEmpty(sessionCaptcha) || !captchaCode.Equals(sessionCaptcha, StringComparison.OrdinalIgnoreCase))
+            {
+                ViewBag.Error = "Invalid CAPTCHA code. Please try again.";
                 return View();
             }
 
@@ -82,12 +93,73 @@ namespace VisitorManagementSystem.Controllers
                 .Include(u => u.Role)
                 .FirstOrDefaultAsync(u => u.Username == username);
 
-            // Hashed password comparison
-            var hashedPassword = PasswordHelper.HashPassword(password);
-            if (user == null || user.Password != hashedPassword)
+            if (user == null)
             {
                 ViewBag.Error = "Invalid username or password.";
                 return View();
+            }
+
+            // Check if user is currently locked out
+            if (user.LockoutEnd.HasValue && user.LockoutEnd.Value > DateTime.UtcNow)
+            {
+                if (user.LockoutLevel >= 2)
+                {
+                    ViewBag.Error = "Contact your administrator.";
+                }
+                else
+                {
+                    var timeRemaining = user.LockoutEnd.Value - DateTime.UtcNow;
+                    var mins = Math.Ceiling(timeRemaining.TotalMinutes);
+                    ViewBag.Error = $"Account locked. Please try again after {mins} minute(s).";
+                }
+                return View();
+            }
+
+            // Hashed password comparison
+            var hashedPassword = PasswordHelper.HashPassword(password);
+            if (user.Password != hashedPassword)
+            {
+                user.FailedLoginAttempts++;
+                if (user.FailedLoginAttempts >= 5)
+                {
+                    user.LockoutLevel++;
+                    if (user.LockoutLevel == 1)
+                        user.LockoutEnd = DateTime.UtcNow.AddMinutes(5);
+                    else if (user.LockoutLevel == 2)
+                        user.LockoutEnd = DateTime.UtcNow.AddHours(1);
+                    else
+                        user.LockoutEnd = DateTime.UtcNow.AddHours(24);
+                    
+                    user.FailedLoginAttempts = 0;
+                    _context.UserMasters.Update(user);
+                    await _context.SaveChangesAsync();
+
+                    if (user.LockoutLevel >= 2)
+                    {
+                        ViewBag.Error = "Contact your administrator.";
+                    }
+                    else
+                    {
+                        ViewBag.Error = "Account locked for 5 minutes due to too many failed attempts.";
+                    }
+                }
+                else
+                {
+                    _context.UserMasters.Update(user);
+                    await _context.SaveChangesAsync();
+                    ViewBag.Error = $"Invalid username or password. Attempts remaining: {5 - user.FailedLoginAttempts}";
+                }
+                return View();
+            }
+
+            // Reset lockout counters on successful login
+            if (user.FailedLoginAttempts > 0 || user.LockoutLevel > 0 || user.LockoutEnd.HasValue)
+            {
+                user.FailedLoginAttempts = 0;
+                user.LockoutLevel = 0;
+                user.LockoutEnd = null;
+                _context.UserMasters.Update(user);
+                await _context.SaveChangesAsync();
             }
 
             // Check if user account is Active
@@ -116,6 +188,10 @@ namespace VisitorManagementSystem.Controllers
             HttpContext.Session.SetString("FullName", user.FullName);
             HttpContext.Session.SetString("RoleName", user.Role?.RoleName ?? "No Role");
             HttpContext.Session.SetString("Email", user.Email);
+            if (!string.IsNullOrEmpty(user.PhotoPath))
+            {
+                HttpContext.Session.SetString("UserPhoto", user.PhotoPath);
+            }
 
             // Resolve and cache EmployeeId in session if user is linked to an Employee
             if (user.EmployeeId.HasValue)
@@ -138,6 +214,29 @@ namespace VisitorManagementSystem.Controllers
 
             var rightsJson = JsonSerializer.Serialize(rights);
             HttpContext.Session.SetString("UserRights", rightsJson);
+
+            // Handle Remember Me
+            if (rememberMe)
+            {
+                var protector = _dataProtectionProvider.CreateProtector("RememberMe");
+                var encryptedUsername = protector.Protect(user.Username);
+                
+                var cookieOptions = new CookieOptions
+                {
+                    Expires = DateTimeOffset.UtcNow.AddDays(30),
+                    HttpOnly = true,
+                    IsEssential = true
+                };
+                Response.Cookies.Append("RememberMeToken", encryptedUsername, cookieOptions);
+            }
+            // Check for default password
+            if (hashedPassword == PasswordHelper.HashPassword("Welcome@123"))
+            {
+                HttpContext.Session.Clear();
+                TempData["ForceChangeUsername"] = user.Username;
+                TempData["ForceChangeMessage"] = "For security reasons, please change your default password to continue.";
+                return RedirectToAction("ForceChangePassword", "Account");
+            }
 
             // Dynamic redirect based on permissions
             if (string.Equals(user.Role?.RoleName, "Admin", StringComparison.OrdinalIgnoreCase))
@@ -174,13 +273,249 @@ namespace VisitorManagementSystem.Controllers
             HttpContext.Session.Clear();
             return View();
         }
+        [HttpGet]
+        public IActionResult ForgotPassword()
+        {
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ForgotPassword(string username, string emailOrMobile)
+        {
+            if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(emailOrMobile))
+            {
+                ViewBag.Error = "Please enter both Username and Email/Mobile.";
+                return View();
+            }
+
+            var user = await _context.UserMasters.FirstOrDefaultAsync(u => 
+                u.Username == username && 
+                (u.Email == emailOrMobile || u.MobileNumber == emailOrMobile));
+
+            if (user == null)
+            {
+                ViewBag.Error = "No matching account found with the provided details.";
+                return View();
+            }
+
+            // Create a temporary token based on UserId and current time to allow reset
+            var protector = _dataProtectionProvider.CreateProtector("PasswordReset");
+            var tokenPayload = $"{user.UserId}:{DateTime.UtcNow.Ticks}";
+            var resetToken = protector.Protect(tokenPayload);
+
+            return RedirectToAction("ResetPassword", new { token = resetToken });
+        }
+
+        [HttpGet]
+        public IActionResult ResetPassword(string token)
+        {
+            if (string.IsNullOrEmpty(token))
+            {
+                return RedirectToAction("Login");
+            }
+            ViewBag.ResetToken = token;
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetPassword(string token, string newPassword, string confirmPassword)
+        {
+            if (string.IsNullOrEmpty(token)) return RedirectToAction("Login");
+            
+            ViewBag.ResetToken = token;
+
+            if (string.IsNullOrEmpty(newPassword) || newPassword != confirmPassword)
+            {
+                ViewBag.Error = "Passwords do not match or are empty.";
+                return View();
+            }
+
+            if (!System.Text.RegularExpressions.Regex.IsMatch(newPassword, @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"))
+            {
+                ViewBag.Error = "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.";
+                return View();
+            }
+
+            try
+            {
+                var protector = _dataProtectionProvider.CreateProtector("PasswordReset");
+                var tokenPayload = protector.Unprotect(token);
+                var parts = tokenPayload.Split(':');
+                if (parts.Length != 2 || !int.TryParse(parts[0], out int userId))
+                {
+                    ViewBag.Error = "Invalid reset token.";
+                    return View();
+                }
+
+                // Check expiry (e.g. 15 minutes)
+                long ticks = long.Parse(parts[1]);
+                var issued = new DateTime(ticks, DateTimeKind.Utc);
+                if (DateTime.UtcNow - issued > TimeSpan.FromMinutes(15))
+                {
+                    ViewBag.Error = "Reset token has expired. Please try again.";
+                    return View();
+                }
+
+                var user = await _context.UserMasters.FindAsync(userId);
+                if (user == null)
+                {
+                    ViewBag.Error = "User not found.";
+                    return View();
+                }
+
+                if (user.Password == PasswordHelper.HashPassword(newPassword))
+                {
+                    ViewBag.Error = "New password cannot be the same as the current password.";
+                    return View();
+                }
+
+                user.Password = PasswordHelper.HashPassword(newPassword);
+                user.FailedLoginAttempts = 0;
+                user.LockoutEnd = null;
+                user.LockoutLevel = 0;
+                
+                _context.UserMasters.Update(user);
+                await _context.SaveChangesAsync();
+
+                TempData["SuccessMessage"] = "Password has been reset successfully. You can now login.";
+                return RedirectToAction("Login");
+            }
+            catch
+            {
+                ViewBag.Error = "Invalid reset token.";
+                return View();
+            }
+        }
+
+        [HttpGet]
+        public IActionResult ChangePassword()
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null) return RedirectToAction("Login", "Account");
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ChangePassword(string oldPassword, string newPassword, string confirmPassword)
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null) return RedirectToAction("Login", "Account");
+
+            if (string.IsNullOrEmpty(oldPassword) || string.IsNullOrEmpty(newPassword) || newPassword != confirmPassword)
+            {
+                ViewBag.Error = "Please ensure all fields are filled and new passwords match.";
+                return View();
+            }
+
+            if (oldPassword == newPassword)
+            {
+                ViewBag.Error = "New password cannot be the same as the old password.";
+                return View();
+            }
+
+            if (!System.Text.RegularExpressions.Regex.IsMatch(newPassword, @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"))
+            {
+                ViewBag.Error = "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.";
+                return View();
+            }
+
+            var user = await _context.UserMasters.FindAsync(userId.Value);
+            if (user == null) return RedirectToAction("Login", "Account");
+
+            var hashedOld = PasswordHelper.HashPassword(oldPassword);
+            if (user.Password != hashedOld)
+            {
+                ViewBag.Error = "Incorrect old password.";
+                return View();
+            }
+
+            user.Password = PasswordHelper.HashPassword(newPassword);
+            _context.UserMasters.Update(user);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Password changed successfully!";
+            return RedirectToAction("Index", "Dashboard");
+        }
+
+        [HttpGet]
+        public IActionResult ForceChangePassword()
+        {
+            var username = TempData["ForceChangeUsername"] as string;
+            if (string.IsNullOrEmpty(username)) return RedirectToAction("Login", "Account");
+            
+            ViewBag.Username = username;
+            ViewBag.Message = TempData["ForceChangeMessage"];
+            return View();
+        }
+
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ForceChangePassword(string username, string oldPassword, string newPassword, string confirmPassword)
+        {
+            if (string.IsNullOrEmpty(username)) return RedirectToAction("Login", "Account");
+            ViewBag.Username = username;
+
+            if (string.IsNullOrEmpty(oldPassword) || string.IsNullOrEmpty(newPassword) || newPassword != confirmPassword)
+            {
+                ViewBag.Error = "Please ensure all fields are filled and new passwords match.";
+                return View();
+            }
+
+            if (oldPassword == newPassword)
+            {
+                ViewBag.Error = "New password cannot be the same as the old password.";
+                return View();
+            }
+
+            if (!System.Text.RegularExpressions.Regex.IsMatch(newPassword, @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$"))
+            {
+                ViewBag.Error = "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.";
+                return View();
+            }
+
+            var user = await _context.UserMasters.FirstOrDefaultAsync(u => u.Username == username);
+            if (user == null) return RedirectToAction("Login", "Account");
+
+            var hashedOld = PasswordHelper.HashPassword(oldPassword);
+            if (user.Password != hashedOld)
+            {
+                ViewBag.Error = "Incorrect old password.";
+                return View();
+            }
+
+            user.Password = PasswordHelper.HashPassword(newPassword);
+            _context.UserMasters.Update(user);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Password changed successfully! Please login with your new password.";
+            return RedirectToAction("Login", "Account");
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Profile()
+        {
+            var userId = HttpContext.Session.GetInt32("UserId");
+            if (userId == null) return RedirectToAction("Login", "Account");
+
+            var user = await _context.UserMasters
+                .Include(u => u.Role)
+                .Include(u => u.Employee)
+                .FirstOrDefaultAsync(u => u.UserId == userId.Value);
+
+            if (user == null) return RedirectToAction("Login", "Account");
+
+            return View(user);
+        }
 
         [HttpGet]
         public IActionResult Logout()
         {
-            // Destroy Session
             HttpContext.Session.Clear();
-            return RedirectToAction("Login");
+            Response.Cookies.Delete("RememberMeToken");
+            return RedirectToAction("Login", "Account");
         }
 
 
@@ -189,6 +524,45 @@ namespace VisitorManagementSystem.Controllers
         public IActionResult AccessDenied()
         {
             return View();
+        }
+
+        [HttpGet]
+        public IActionResult CaptchaImage()
+        {
+            var random = new Random();
+            const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // Exclude I, O, 0, 1 for clarity
+            var captcha = new string(Enumerable.Repeat(chars, 5).Select(s => s[random.Next(s.Length)]).ToArray());
+            
+            HttpContext.Session.SetString("CaptchaCode", captcha);
+            
+            // Create SVG
+            var width = 120;
+            var height = 40;
+            var svg = $"<svg width='{width}' height='{height}' xmlns='http://www.w3.org/2000/svg'>";
+            svg += $"<rect width='100%' height='100%' fill='#f0f2f5' />";
+            
+            // Add noise lines
+            for(int i = 0; i < 7; i++)
+            {
+                var x1 = random.Next(width);
+                var y1 = random.Next(height);
+                var x2 = random.Next(width);
+                var y2 = random.Next(height);
+                svg += $"<line x1='{x1}' y1='{y1}' x2='{x2}' y2='{y2}' stroke='#888' stroke-width='2' />";
+            }
+
+            // Add text with slight random rotation
+            int x = 10;
+            foreach (var ch in captcha)
+            {
+                var rotate = random.Next(-15, 15);
+                var y = random.Next(25, 32);
+                svg += $"<text x='{x}' y='{y}' font-family='Arial' font-size='24' font-weight='bold' fill='#1e3c72' transform='rotate({rotate} {x},{y})'>{ch}</text>";
+                x += 20;
+            }
+            svg += "</svg>";
+
+            return Content(svg, "image/svg+xml");
         }
     }
 }

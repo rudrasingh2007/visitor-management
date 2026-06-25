@@ -123,16 +123,25 @@
                         <span class="input-group-text"><i class="fa-solid fa-lock"></i></span>
                         <input type="password" class="form-control" id="password" name="password" placeholder="Enter password" required />
                     </div>
-                </div>
-
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="rememberMe" name="rememberMe" value="true">
-                        <label class="form-check-label text-muted" for="rememberMe">
-                            Remember me
-                        </label>
+                    <div class="text-end mt-2">
+                        <a asp-action="ForgotPassword" asp-controller="Account" class="text-decoration-none small text-muted">Forgot Password?</a>
                     </div>
                 </div>
+
+                <div class="mb-4">
+                    <label for="captchaCode" class="form-label font-weight-bold">Security Check</label>
+                    <div class="d-flex align-items-center mb-2">
+                        <img src="@Url.Action("CaptchaImage", "Account")" id="captchaImg" alt="Captcha" class="border rounded me-2" style="height: 40px;" />
+                        <button type="button" class="btn btn-outline-secondary btn-sm" onclick="document.getElementById('captchaImg').src = '@Url.Action("CaptchaImage", "Account")?' + new Date().getTime();" title="Refresh Captcha">
+                            <i class="fa-solid fa-rotate-right"></i>
+                        </button>
+                    </div>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="fa-solid fa-shield"></i></span>
+                        <input type="text" class="form-control" id="captchaCode" name="captchaCode" placeholder="Enter the text from image" required autocomplete="off" />
+                    </div>
+                </div>
+
 
                 <button type="submit" class="btn btn-primary w-100 btn-login mb-2">
                     <i class="fa-solid fa-right-to-bracket me-2"></i>Login

@@ -201,8 +201,12 @@
                     </div>
 
                     <div class="mb-3">
-                        <label for="newPassword" class="form-label fw-semibold text-dark">New Password <span class="text-danger">*</span></label>
-                        <input type="password" class="form-control rounded-2" id="newPassword" name="newPassword" placeholder="Enter new password" required minlength="4" />
+                        <label for="newPassword" class="form-label fw-semibold text-dark">
+                            New Password <span class="text-danger">*</span>
+                            <i class="fa-solid fa-circle-info ms-1 text-muted" data-bs-toggle="tooltip" title="Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character."></i>
+                        </label>
+                        <input type="password" class="form-control rounded-2" id="newPassword" name="newPassword" placeholder="Enter new password" required />
+                        <partial name="_PasswordStrength" model='@("newPassword")' />
                     </div>
                 </div>
                 

@@ -97,8 +97,8 @@
                                         @item.TotalVisits
                                     </span>
                                 </td>
-                                <td class="visit-date" data-date="@(item.LastVisitDate?.ToLocalTime().ToString("yyyy-MM-dd") ?? "")" data-order="@(item.LastVisitDate?.ToString("yyyyMMddHHmmss") ?? "00000000000000")">
-                                    @(item.LastVisitDate.HasValue ? item.LastVisitDate.Value.ToLocalTime().ToString("dd MMM yyyy hh:mm tt") : "Never Visited")
+                                <td class="visit-date" data-date="@(item.LastVisitDate?.ToAppLocalTime().ToString("yyyy-MM-dd") ?? "")" data-order="@(item.LastVisitDate?.ToString("yyyyMMddHHmmss") ?? "00000000000000")">
+                                    @(item.LastVisitDate.HasValue ? item.LastVisitDate.Value.ToAppLocalTime().ToString("dd MMM yyyy hh:mm tt") : "Never Visited")
                                 </td>
                                 <td>
                                     @if (item.Status == "Active")

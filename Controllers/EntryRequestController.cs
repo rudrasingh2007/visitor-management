@@ -247,6 +247,7 @@ namespace VisitorManagementSystem.Controllers
                 }
                 catch (Exception ex)
                 {
+                    Console.WriteLine($"APPROVE EXCEPTION: {ex}");
                     await transaction.RollbackAsync();
                     TempData["ErrorMessage"] = $"An error occurred during approval: {ex.Message}";
                 }

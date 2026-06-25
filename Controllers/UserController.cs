@@ -9,6 +9,8 @@ using VisitorManagementSystem.Filters;
 using VisitorManagementSystem.Models;
 using VisitorManagementSystem.ViewModels;
 using VisitorManagementSystem.Helpers;
+using Microsoft.AspNetCore.Hosting;
+using System.IO;
 
 namespace VisitorManagementSystem.Controllers
 {
@@ -17,10 +19,12 @@ namespace VisitorManagementSystem.Controllers
     public class UserController : Controller
     {
         private readonly ApplicationDbContext _context;
+        private readonly IWebHostEnvironment _webHostEnvironment;
 
-        public UserController(ApplicationDbContext context)
+        public UserController(ApplicationDbContext context, IWebHostEnvironment webHostEnvironment)
         {
             _context = context;
+            _webHostEnvironment = webHostEnvironment;
         }
 
         // GET: User
@@ -87,10 +91,9 @@ namespace VisitorManagementSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(UserViewModel model)
         {
-            if (string.IsNullOrEmpty(model.Password))
-            {
-                ModelState.AddModelError("Password", "Password is required.");
-            }
+            // Autogenerate password
+            model.Password = "Welcome@123";
+            ModelState.Remove("Password");
 
             var employeeRole = await _context.RoleMasters.FirstOrDefaultAsync(r => r.RoleName == "Employee");
             if (employeeRole != null)
@@ -144,6 +147,21 @@ namespace VisitorManagementSystem.Controllers
 
                 if (ModelState.IsValid)
                 {
+                    string? uniqueFileName = null;
+                    if (model.Photo != null)
+                    {
+                        string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "img", "users");
+                        if (!Directory.Exists(uploadsFolder))
+                            Directory.CreateDirectory(uploadsFolder);
+                        
+                        uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(model.Photo.FileName);
+                        string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                        using (var fileStream = new FileStream(filePath, FileMode.Create))
+                        {
+                            await model.Photo.CopyToAsync(fileStream);
+                        }
+                    }
+
                     var user = new UserMaster
                     {
                         Username = model.Username,
@@ -154,6 +172,7 @@ namespace VisitorManagementSystem.Controllers
                         RoleId = model.RoleId,
                         Status = model.Status,
                         EmployeeId = model.EmployeeId,
+                        PhotoPath = uniqueFileName,
                         CreatedDate = DateTime.UtcNow
                     };
 
@@ -230,6 +249,7 @@ namespace VisitorManagementSystem.Controllers
                 RoleId = user.RoleId,
                 Status = user.Status,
                 EmployeeId = user.EmployeeId,
+                PhotoPath = user.PhotoPath,
                 CreatedDate = user.CreatedDate
             };
 
@@ -241,6 +261,8 @@ namespace VisitorManagementSystem.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, UserViewModel model)
         {
+            ModelState.Remove("Password");
+            
             if (id != model.UserId) return NotFound();
 
             var employeeRole = await _context.RoleMasters.FirstOrDefaultAsync(r => r.RoleName == "Employee");
@@ -307,6 +329,29 @@ namespace VisitorManagementSystem.Controllers
                         dbUser.RoleId = model.RoleId;
                         dbUser.Status = model.Status;
                         dbUser.EmployeeId = model.EmployeeId;
+
+                        if (model.Photo != null)
+                        {
+                            if (!string.IsNullOrEmpty(dbUser.PhotoPath))
+                            {
+                                string oldFilePath = Path.Combine(_webHostEnvironment.WebRootPath, "img", "users", dbUser.PhotoPath);
+                                if (System.IO.File.Exists(oldFilePath))
+                                    System.IO.File.Delete(oldFilePath);
+                            }
+
+                            string uploadsFolder = Path.Combine(_webHostEnvironment.WebRootPath, "img", "users");
+                            if (!Directory.Exists(uploadsFolder))
+                                Directory.CreateDirectory(uploadsFolder);
+                            
+                            string uniqueFileName = Guid.NewGuid().ToString() + "_" + Path.GetFileName(model.Photo.FileName);
+                            string filePath = Path.Combine(uploadsFolder, uniqueFileName);
+                            using (var fileStream = new FileStream(filePath, FileMode.Create))
+                            {
+                                await model.Photo.CopyToAsync(fileStream);
+                            }
+                            dbUser.PhotoPath = uniqueFileName;
+                        }
+
                         dbUser.LastUpdatedDate = DateTime.UtcNow;
 
                         await _context.SaveChangesAsync();
@@ -364,6 +409,15 @@ namespace VisitorManagementSystem.Controllers
 
             try
             {
+                if (!string.IsNullOrEmpty(user.PhotoPath))
+                {
+                    string photoPath = Path.Combine(_webHostEnvironment.WebRootPath, "img", "users", user.PhotoPath);
+                    if (System.IO.File.Exists(photoPath))
+                    {
+                        System.IO.File.Delete(photoPath);
+                    }
+                }
+
                 _context.UserMasters.Remove(user);
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = "User deleted successfully!";
@@ -383,6 +437,13 @@ namespace VisitorManagementSystem.Controllers
             if (string.IsNullOrEmpty(newPassword))
             {
                 TempData["ErrorMessage"] = "New Password is required.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            var passwordRegex = new System.Text.RegularExpressions.Regex(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$");
+            if (!passwordRegex.IsMatch(newPassword))
+            {
+                TempData["ErrorMessage"] = "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.";
                 return RedirectToAction(nameof(Index));
             }
 

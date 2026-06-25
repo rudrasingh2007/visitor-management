@@ -247,6 +247,31 @@ namespace VisitorManagementSystem.Controllers
             return View(appointment);
         }
 
+        // Add Cancel Action
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Cancel(int id)
+        {
+            var appointment = await _context.AppointmentMasters.FindAsync(id);
+            if (appointment == null)
+            {
+                return NotFound();
+            }
+
+            if (appointment.Status == "Completed" || appointment.Status == "Cancelled")
+            {
+                TempData["ErrorMessage"] = $"Appointment cannot be cancelled as it is already {appointment.Status}.";
+                return RedirectToAction(nameof(Index));
+            }
+
+            appointment.Status = "Cancelled";
+            _context.AppointmentMasters.Update(appointment);
+            await _context.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Appointment cancelled successfully.";
+            return RedirectToAction(nameof(Index));
+        }
+
         // 5. Approve Action (POST)
         [HttpPost]
         [ValidateAntiForgeryToken]

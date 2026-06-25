@@ -148,11 +148,11 @@
                                 <td class="fw-bold text-dark"><i class="fa-solid fa-ticket text-primary-emphasis me-1"></i>@item.GatePassNumber</td>
                                 <td class="fw-semibold">@(item.Visitor != null ? $"{item.Visitor.FirstName} {item.Visitor.LastName}" : "Unknown")</td>
                                 <td>@(item.Employee != null ? $"{item.Employee.FirstName} {item.Employee.LastName}" : "Unknown")</td>
-                                <td class="issue-date" data-date="@(item.VisitEntry?.CheckInTime != null ? item.VisitEntry.CheckInTime.Value.ToLocalTime().ToString("yyyy-MM-dd") : "")" data-order="@(item.VisitEntry?.CheckInTime != null ? item.VisitEntry.CheckInTime.Value.ToString("yyyyMMddHHmmss") : "")">
-                                    @(item.VisitEntry?.CheckInTime != null ? item.VisitEntry.CheckInTime.Value.ToLocalTime().ToString("dd MMM yyyy hh:mm tt") : "N/A")
+                                <td class="issue-date" data-date="@(item.VisitEntry?.CheckInTime != null ? item.VisitEntry.CheckInTime.Value.ToAppLocalTime().ToString("yyyy-MM-dd") : "")" data-order="@(item.VisitEntry?.CheckInTime != null ? item.VisitEntry.CheckInTime.Value.ToString("yyyyMMddHHmmss") : "")">
+                                    @(item.VisitEntry?.CheckInTime != null ? item.VisitEntry.CheckInTime.Value.ToAppLocalTime().ToString("dd MMM yyyy hh:mm tt") : "N/A")
                                 </td>
                                 <td>
-                                    @(item.VisitEntry?.CheckOutTime != null ? item.VisitEntry.CheckOutTime.Value.ToLocalTime().ToString("dd MMM yyyy hh:mm tt") : "N/A")
+                                    @(item.VisitEntry?.CheckOutTime != null ? item.VisitEntry.CheckOutTime.Value.ToAppLocalTime().ToString("dd MMM yyyy hh:mm tt") : "N/A")
                                 </td>
                                 <td>
                                     @if (currentStatus == "Approved")

@@ -72,13 +72,13 @@
                         <!-- Created Date -->
                         <div class="col-sm-6">
                             <span class="text-muted small d-block">Created Date</span>
-                            <span class="fw-semibold text-dark">@Model.CreatedDate.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")</span>
+                            <span class="fw-semibold text-dark">@Model.CreatedDate.ToAppLocalTime().ToString("dd MMM yyyy hh:mm tt")</span>
                         </div>
 
                         <!-- Last Updated Date -->
                         <div class="col-sm-6">
                             <span class="text-muted small d-block">Last Updated Date</span>
-                            <span class="fw-semibold text-dark">@(Model.LastUpdatedDate.HasValue ? Model.LastUpdatedDate.Value.ToLocalTime().ToString("dd MMM yyyy hh:mm tt") : "-")</span>
+                            <span class="fw-semibold text-dark">@(Model.LastUpdatedDate.HasValue ? Model.LastUpdatedDate.Value.ToAppLocalTime().ToString("dd MMM yyyy hh:mm tt") : "-")</span>
                         </div>
                     </div>
 

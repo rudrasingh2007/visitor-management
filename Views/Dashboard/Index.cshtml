@@ -125,8 +125,8 @@
                                     {
                                         <tr>
                                             <td class="small text-dark">
-                                                @(req.CreatedDate.ToLocalTime().ToString("dd MMM yyyy"))
-                                                <span class="text-muted ms-1">@(req.CreatedDate.ToLocalTime().ToString("hh:mm tt"))</span>
+                                                @(req.CreatedDate.ToAppLocalTime().ToString("dd MMM yyyy"))
+                                                <span class="text-muted ms-1">@(req.CreatedDate.ToAppLocalTime().ToString("hh:mm tt"))</span>
                                             </td>
                                             <td class="fw-semibold text-dark">@req.VisitorName</td>
                                             <td class="small text-dark">@req.EmployeeName</td>
@@ -176,8 +176,8 @@
                                         <tr>
                                             <td class="fw-semibold text-dark">@(log.Visitor != null ? $"{log.Visitor.FirstName} {log.Visitor.LastName}" : "-")</td>
                                             <td class="small text-dark">
-                                                @(log.CheckInTime?.ToLocalTime().ToString("dd MMM yyyy") ?? "-")
-                                                <span class="text-muted ms-1">@(log.CheckInTime?.ToLocalTime().ToString("hh:mm tt") ?? "")</span>
+                                                @(log.CheckInTime?.ToAppLocalTime().ToString("dd MMM yyyy") ?? "-")
+                                                <span class="text-muted ms-1">@(log.CheckInTime?.ToAppLocalTime().ToString("hh:mm tt") ?? "")</span>
                                             </td>
                                             <td class="text-center">
                                                 @switch (log.VisitStatus)
@@ -321,7 +321,7 @@
                                 @foreach (var req in Model.PendingEntryRequests)
                                 {
                                     <tr>
-                                        <td class="small">@req.RequestDateTime.ToLocalTime().ToString("hh:mm tt")</td>
+                                        <td class="small">@req.RequestDateTime.ToAppLocalTime().ToString("hh:mm tt")</td>
                                         <td class="small fw-semibold">@req.Visitor?.FirstName @req.Visitor?.LastName</td>
                                         <td>
                                             <form asp-controller="EntryRequest" asp-action="Approve" method="post" class="d-inline">
@@ -363,7 +363,7 @@
                                 {
                                     <tr>
                                         <td class="small fw-semibold">@req.Visitor?.FirstName @req.Visitor?.LastName</td>
-                                        <td class="small">@req.CreatedDate.ToLocalTime().ToString("dd MMM yyyy")</td>
+                                        <td class="small">@req.CreatedDate.ToAppLocalTime().ToString("dd MMM yyyy")</td>
                                         <td><span class="badge bg-success-subtle text-success rounded-pill px-2">Approved</span></td>
                                     </tr>
                                 }
@@ -395,7 +395,7 @@
                                 {
                                     <tr>
                                         <td class="small fw-semibold">@req.Visitor?.FirstName @req.Visitor?.LastName</td>
-                                        <td class="small">@req.CreatedDate.ToLocalTime().ToString("dd MMM yyyy")</td>
+                                        <td class="small">@req.CreatedDate.ToAppLocalTime().ToString("dd MMM yyyy")</td>
                                         <td><span class="badge bg-danger-subtle text-danger rounded-pill px-2">Rejected</span></td>
                                     </tr>
                                 }
@@ -427,8 +427,8 @@
                                 {
                                     <tr>
                                         <td class="small fw-semibold">@req.Visitor?.FirstName @req.Visitor?.LastName</td>
-                                        <td class="small">@(req.CheckInTime?.ToLocalTime().ToString("dd MMM hh:mm tt") ?? "-")</td>
-                                        <td class="small">@(req.CheckOutTime?.ToLocalTime().ToString("dd MMM hh:mm tt") ?? "-")</td>
+                                        <td class="small">@(req.CheckInTime?.ToAppLocalTime().ToString("dd MMM hh:mm tt") ?? "-")</td>
+                                        <td class="small">@(req.CheckOutTime?.ToAppLocalTime().ToString("dd MMM hh:mm tt") ?? "-")</td>
                                     </tr>
                                 }
                             </tbody>
@@ -502,6 +502,21 @@
                 </div>
             </div>
 
+            <!-- Pending Appointments -->
+            <div class="col-12 col-sm-6 col-md-4 col-xxl">
+                <div class="card stat-card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-primary border-4 position-relative overflow-hidden">
+                    <div class="card-body p-0 d-flex align-items-center justify-content-between">
+                        <div>
+                            <span class="text-muted small uppercase fw-semibold d-block mb-1">Pending Appointments</span>
+                            <h3 class="fw-bold mb-0 text-dark">@Model.AdminPendingAppointments</h3>
+                        </div>
+                        <div class="stat-icon-wrapper bg-primary bg-opacity-10 text-primary rounded-circle p-2">
+                            <i class="fa-solid fa-calendar-plus fa-lg"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Passes Generated Today -->
             <div class="col-12 col-sm-6 col-md-4 col-xxl">
                 <div class="card stat-card border-0 shadow-sm rounded-4 p-3 bg-white h-100 border-start border-danger border-4 position-relative overflow-hidden">
@@ -518,68 +533,7 @@
             </div>
         </div>
 
-        <!-- Charts Section -->
-        <div class="row g-4 mb-5">
-            <!-- 1. Daily Visitor Trend -->
-            <div class="col-12 col-lg-6">
-                <div class="card border-0 shadow-sm rounded-4 h-100">
-                    <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
-                        <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-chart-line me-2 text-primary"></i>Daily Visitor Trend</h6>
-                        <p class="text-muted small mb-0">Visitor count for the last 7 days</p>
-                    </div>
-                    <div class="card-body px-4 py-3">
-                        <div style="position: relative; height: 220px; width: 100%;">
-                            <canvas id="dailyTrendChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
-            <!-- 2. Appointment Status Summary -->
-            <div class="col-12 col-lg-6">
-                <div class="card border-0 shadow-sm rounded-4 h-100">
-                    <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
-                        <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-chart-pie me-2 text-success"></i>Appointment Status Summary</h6>
-                        <p class="text-muted small mb-0">Current status ratio of all booked appointments</p>
-                    </div>
-                    <div class="card-body px-4 py-3 d-flex align-items-center justify-content-center">
-                        <div style="position: relative; height: 220px; width: 100%; max-width: 320px;">
-                            <canvas id="apptStatusChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 3. Department-wise Visitors -->
-            <div class="col-12 col-lg-6">
-                <div class="card border-0 shadow-sm rounded-4 h-100">
-                    <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
-                        <h6 class="fw-bold text-dark mb-0"><i class="fa-solid fa-building me-2 text-info"></i>Department-wise Visitors</h6>
-                        <p class="text-muted small mb-0">Total logged visits per organization department</p>
-                    </div>
-                    <div class="card-body px-4 py-3">
-                        <div style="position: relative; height: 220px; width: 100%;">
-                            <canvas id="deptVisitorsChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- 4. Monthly Visitor Statistics -->
-            <div class="col-12 col-lg-6">
-                <div class="card border-0 shadow-sm rounded-4 h-100">
-                    <div class="card-header bg-white border-0 pt-4 px-4 pb-0">
-                        <h6 class="fw-bold text-dark mb-0"><i class="fa-regular fa-calendar-days me-2 text-warning"></i>Monthly Visitor Statistics</h6>
-                        <p class="text-muted small mb-0">Historical visitor statistics by month (Last 6 Months)</p>
-                    </div>
-                    <div class="card-body px-4 py-3">
-                        <div style="position: relative; height: 220px; width: 100%;">
-                            <canvas id="monthlyStatsChart"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
 
         <!-- Recent Tables Row -->
         <div class="row g-4">
@@ -683,8 +637,8 @@
                                             <tr>
                                                 <td class="fw-semibold text-dark">@(log.Visitor != null ? $"{log.Visitor.FirstName} {log.Visitor.LastName}" : "-")</td>
                                                 <td class="small text-dark">
-                                                    @(log.CheckInTime?.ToLocalTime().ToString("dd MMM yyyy") ?? "-")
-                                                    <span class="text-muted ms-1">@(log.CheckInTime?.ToLocalTime().ToString("hh:mm tt") ?? "")</span>
+                                                    @(log.CheckInTime?.ToAppLocalTime().ToString("dd MMM yyyy") ?? "-")
+                                                    <span class="text-muted ms-1">@(log.CheckInTime?.ToAppLocalTime().ToString("hh:mm tt") ?? "")</span>
                                                 </td>
                                                 <td class="text-center">
                                                     @switch (log.VisitStatus)
@@ -744,133 +698,7 @@
                 });
             }
 
-            // Charts (only render if admin charts canvas exists)
-            if ($('#dailyTrendChart').length) {
-                // 1. Daily Visitor Trend (Line Chart)
-                const dailyTrendCtx = document.getElementById('dailyTrendChart').getContext('2d');
-                new Chart(dailyTrendCtx, {
-                    type: 'line',
-                    data: {
-                        labels: @Html.Raw(Json.Serialize(Model.DailyTrendLabels)),
-                        datasets: [{
-                            label: 'Visitors',
-                            data: @Html.Raw(Json.Serialize(Model.DailyTrendData)),
-                            borderColor: '#1e3c72',
-                            backgroundColor: 'rgba(30, 60, 114, 0.1)',
-                            borderWidth: 3,
-                            fill: true,
-                            tension: 0.3,
-                            pointBackgroundColor: '#1e3c72',
-                            pointBorderColor: '#fff',
-                            pointHoverRadius: 6
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: { stepSize: 1, precision: 0 }
-                            }
-                        }
-                    }
-                });
 
-                // 2. Appointment Status Summary (Doughnut Chart)
-                const apptStatusCtx = document.getElementById('apptStatusChart').getContext('2d');
-                new Chart(apptStatusCtx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: @Html.Raw(Json.Serialize(Model.AppointmentStatusLabels)),
-                        datasets: [{
-                            data: @Html.Raw(Json.Serialize(Model.AppointmentStatusData)),
-                            backgroundColor: [
-                                '#ffc107', // Pending
-                                '#198754', // Approved
-                                '#dc3545', // Rejected
-                                '#6c757d', // Cancelled
-                                '#0dcaf0'  // Checked Out
-                            ],
-                            borderWidth: 2,
-                            hoverOffset: 4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: {
-                                position: 'right',
-                                labels: { boxWidth: 12, font: { size: 11 } }
-                            }
-                        }
-                    }
-                });
-
-                // 3. Department-wise Visitors (Bar Chart)
-                const deptVisitorsCtx = document.getElementById('deptVisitorsChart').getContext('2d');
-                new Chart(deptVisitorsCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: @Html.Raw(Json.Serialize(Model.DepartmentLabels)),
-                        datasets: [{
-                            label: 'Visitors',
-                            data: @Html.Raw(Json.Serialize(Model.DepartmentData)),
-                            backgroundColor: '#0dcaf0',
-                            borderColor: '#0b5ed7',
-                            borderWidth: 0,
-                            borderRadius: 6
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: { stepSize: 1, precision: 0 }
-                            }
-                        }
-                    }
-                });
-
-                // 4. Monthly Visitor Statistics (Bar Chart)
-                const monthlyStatsCtx = document.getElementById('monthlyStatsChart').getContext('2d');
-                new Chart(monthlyStatsCtx, {
-                    type: 'bar',
-                    data: {
-                        labels: @Html.Raw(Json.Serialize(Model.MonthlyLabels)),
-                        datasets: [{
-                            label: 'Visitors',
-                            data: @Html.Raw(Json.Serialize(Model.MonthlyData)),
-                            backgroundColor: '#ffc107',
-                            borderColor: '#e0a800',
-                            borderWidth: 0,
-                            borderRadius: 6
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false }
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: { stepSize: 1, precision: 0 }
-                            }
-                        }
-                    }
-                });
-            }
         });
     </script>
 }

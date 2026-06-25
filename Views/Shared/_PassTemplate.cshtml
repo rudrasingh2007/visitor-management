@@ -1,61 +1,50 @@
 @model VisitorManagementSystem.ViewModels.PassTemplateViewModel
 
-<div style="font-family: Arial, sans-serif; max-width: 350px; margin: 0 auto; border: 2px solid #333; padding: 20px; text-align: left; background: white;">
+<div style="font-family: Arial, sans-serif; width: 380px; height: 240px; margin: 0 auto; border: 2px solid #333; padding: 10px 15px; text-align: left; background: white; box-sizing: border-box; border-radius: 8px; position: relative;">
     <!-- Header -->
-    <div style="text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 15px;">
-        <h2 style="margin: 0; color: #333; letter-spacing: 2px;">VISIT PASS</h2>
+    <div style="text-align: center; border-bottom: 2px solid #333; padding-bottom: 5px; margin-bottom: 10px;">
+        <h3 style="margin: 0; color: #333; letter-spacing: 1px; font-size: 16px;">VISITOR PASS</h3>
     </div>
 
-    <div style="text-align: center; margin-bottom: 15px;">
-        <img id="printPhoto" src="@(string.IsNullOrEmpty(Model.PhotoPath) ? "/img/default_user.png" : Model.PhotoPath)" style="width: 100px; height: 100px; object-fit: cover; border: 1px solid #999; border-radius: 4px;" />
-    </div>
+    <!-- Body Container -->
+    <div style="display: flex; align-items: stretch; justify-content: space-between; height: calc(100% - 40px);">
+        
+        <!-- Left: Photo -->
+        <div style="flex: 0 0 auto; padding-right: 15px; display: flex; align-items: center;">
+            <img id="printPhoto" src="@(string.IsNullOrEmpty(Model.PhotoPath) ? "/img/default_user.svg" : Model.PhotoPath)" style="width: 75px; height: 75px; object-fit: @(string.IsNullOrEmpty(Model.PhotoPath) ? "contain" : "cover"); padding: @(string.IsNullOrEmpty(Model.PhotoPath) ? "10px" : "0"); border: 1px solid #999; border-radius: 4px; background-color: #f8f9fa;" />
+        </div>
 
-    <div style="margin-bottom: 10px; font-size: 14px; color: #333;">
-        @if (!string.IsNullOrWhiteSpace(Model.VisitorName))
-        {
-            <p style="margin: 0 0 5px 0;"><strong>Name:</strong> @Model.VisitorName</p>
-        }
-        @if (!string.IsNullOrWhiteSpace(Model.MobileNumber))
-        {
-            <p style="margin: 0 0 5px 0;"><strong>Mobile:</strong> @Model.MobileNumber</p>
-        }
-    </div>
+        <!-- Middle: Details -->
+        <div style="flex: 1 1 auto; font-size: 12px; color: #333; border-left: 1px solid #ddd; padding-left: 15px; display: flex; flex-direction: column; justify-content: center;">
+            @if (!string.IsNullOrWhiteSpace(Model.VisitorName))
+            {
+                <p style="margin: 0 0 4px 0;"><strong>Name:</strong> @Model.VisitorName</p>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.MobileNumber))
+            {
+                <p style="margin: 0 0 4px 0;"><strong>Mobile:</strong> @Model.MobileNumber</p>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.EmployeeName))
+            {
+                <p style="margin: 0 0 4px 0;"><strong>Host:</strong> @Model.EmployeeName</p>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.GatePassNumber))
+            {
+                <p style="margin: 0 0 4px 0;"><strong>Pass No:</strong> @Model.GatePassNumber</p>
+            }
+            @if (!string.IsNullOrWhiteSpace(Model.VisitDate) || !string.IsNullOrWhiteSpace(Model.CheckInTime))
+            {
+                <p style="margin: 0 0 4px 0;"><strong>Date/Time:</strong> @Model.VisitDate @Model.CheckInTime</p>
+            }
+        </div>
 
-    <div style="margin-bottom: 10px; font-size: 14px; color: #333;">
-        @if (!string.IsNullOrWhiteSpace(Model.EmployeeName))
-        {
-            <p style="margin: 0 0 5px 0;"><strong>Employee To Meet:</strong> @Model.EmployeeName</p>
-        }
-        @if (!string.IsNullOrWhiteSpace(Model.Purpose))
-        {
-            <p style="margin: 0 0 5px 0;"><strong>Purpose:</strong> @Model.Purpose</p>
-        }
-    </div>
+        <!-- Right: QR Code -->
+        <div style="flex: 0 0 auto; padding-left: 15px; border-left: 1px solid #ddd; display: flex; align-items: center;">
+            @if (!string.IsNullOrEmpty(Model.QRCodePath))
+            {
+                <img src="@Model.QRCodePath" style="width: 70px; height: 70px;" />
+            }
+        </div>
 
-    <div style="margin-bottom: 15px; font-size: 14px; color: #333;">
-        @if (!string.IsNullOrWhiteSpace(Model.GatePassNumber))
-        {
-            <p style="margin: 0 0 5px 0;"><strong>Pass No:</strong> @Model.GatePassNumber</p>
-        }
-        @if (!string.IsNullOrWhiteSpace(Model.VisitDate))
-        {
-            <p style="margin: 0 0 5px 0;"><strong>Date:</strong> @Model.VisitDate</p>
-        }
-        @if (!string.IsNullOrWhiteSpace(Model.CheckInTime))
-        {
-            <p style="margin: 0 0 5px 0;"><strong>Check-In Time:</strong> @Model.CheckInTime</p>
-        }
-        @if (!string.IsNullOrWhiteSpace(Model.Status))
-        {
-            <p style="margin: 0 0 5px 0;"><strong>Status:</strong> @Model.Status</p>
-        }
-    </div>
-
-    <!-- QR Section -->
-    <div style="text-align: center;">
-        @if (!string.IsNullOrEmpty(Model.QRCodePath))
-        {
-            <img src="@Model.QRCodePath" style="width: 120px; height: 120px;" />
-        }
     </div>
 </div>

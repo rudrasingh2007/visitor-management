@@ -8,11 +8,11 @@
     
     // Check-in dates/times
     var visitDate = Model.CheckInTime.HasValue 
-        ? Model.CheckInTime.Value.ToLocalTime().ToString("dd-MM-yyyy") 
-        : Model.CreatedDate.ToLocalTime().ToString("dd-MM-yyyy");
+        ? Model.CheckInTime.Value.ToAppLocalTime().ToString("dd-MM-yyyy") 
+        : Model.CreatedDate.ToAppLocalTime().ToString("dd-MM-yyyy");
         
     var checkInTime = Model.CheckInTime.HasValue 
-        ? Model.CheckInTime.Value.ToLocalTime().ToString("hh:mm tt") 
+        ? Model.CheckInTime.Value.ToAppLocalTime().ToString("hh:mm tt") 
         : "Pending Check-In";
 
     var purpose = Model.Appointment?.Purpose ?? Model.Remarks ?? "N/A";

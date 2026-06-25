@@ -47,8 +47,8 @@
                     {
                         <tr>
                             <td class="small text-dark">
-                                @request.RequestDateTime.ToLocalTime().ToString("dd MMM yyyy")
-                                <span class="text-muted d-block fs-8">@request.RequestDateTime.ToLocalTime().ToString("hh:mm tt")</span>
+                                @request.RequestDateTime.ToAppLocalTime().ToString("dd MMM yyyy")
+                                <span class="text-muted d-block fs-8">@request.RequestDateTime.ToAppLocalTime().ToString("hh:mm tt")</span>
                             </td>
                             <td class="fw-semibold text-dark">@(request.Visitor != null ? $"{request.Visitor.FirstName} {request.Visitor.LastName}" : "-")</td>
                             <td class="text-muted small">@(request.Visitor?.MobileNumber ?? "-")</td>
@@ -162,7 +162,8 @@
                     { "orderable": false, "targets": -1 }
                 ],
                 "language": {
-                    "search": "Filter Requests:",
+                    "search": "",
+                    "searchPlaceholder": "Search requests...",
                     "lengthMenu": "Show _MENU_ entries"
                 },
                 "buttons": [

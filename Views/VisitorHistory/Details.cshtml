@@ -69,7 +69,7 @@
                         </div>
                         
                         <div class="col-4 text-muted">Joined On:</div>
-                        <div class="col-8 fw-semibold text-dark">@Model.Visitor.CreatedDate.ToLocalTime().ToString("dd MMM yyyy")</div>
+                        <div class="col-8 fw-semibold text-dark">@Model.Visitor.CreatedDate.ToAppLocalTime().ToString("dd MMM yyyy")</div>
                     </div>
 
                     <h6 class="fw-bold text-dark mb-3 border-bottom pb-2">Summary Metrics</h6>
@@ -81,7 +81,7 @@
                         <div class="d-flex justify-content-between mb-2">
                             <span class="text-muted">Last Visit Date:</span>
                             <strong class="text-dark">
-                                @(Model.LastVisitDate.HasValue ? Model.LastVisitDate.Value.ToLocalTime().ToString("dd MMM yyyy") : "N/A")
+                                @(Model.LastVisitDate.HasValue ? Model.LastVisitDate.Value.ToAppLocalTime().ToString("dd MMM yyyy") : "N/A")
                             </strong>
                         </div>
                         <div class="mb-0">
@@ -148,8 +148,8 @@
                                                     <div class="fw-semibold">@(visit.Employee != null ? $"{visit.Employee.FirstName} {visit.Employee.LastName}" : "N/A")</div>
                                                     <span class="text-muted small">@(visit.Department?.DepartmentName ?? "N/A")</span>
                                                 </td>
-                                                <td>@(visit.CheckInTime.HasValue ? visit.CheckInTime.Value.ToLocalTime().ToString("dd-MM-yyyy hh:mm tt") : "Pending Check-In")</td>
-                                                <td>@(visit.CheckOutTime.HasValue ? visit.CheckOutTime.Value.ToLocalTime().ToString("dd-MM-yyyy hh:mm tt") : "-")</td>
+                                                <td>@(visit.CheckInTime.HasValue ? visit.CheckInTime.Value.ToAppLocalTime().ToString("dd-MM-yyyy hh:mm tt") : "Pending Check-In")</td>
+                                                <td>@(visit.CheckOutTime.HasValue ? visit.CheckOutTime.Value.ToAppLocalTime().ToString("dd-MM-yyyy hh:mm tt") : "-")</td>
                                                 <td class="fw-semibold">@durationText</td>
                                                 <td>
                                                     @if (visit.VisitStatus == "Checked In")
@@ -244,8 +244,8 @@
 
                                             <tr>
                                                 <td class="fw-bold"><i class="fa-solid fa-ticket text-warning-emphasis me-1"></i>@pass.GatePassNumber</td>
-                                                <td>@pass.IssueDateTime.ToLocalTime().ToString("dd-MM-yyyy hh:mm tt")</td>
-                                                <td>@pass.ExpiryDateTime.ToLocalTime().ToString("dd-MM-yyyy hh:mm tt")</td>
+                                                <td>@pass.IssueDateTime.ToAppLocalTime().ToString("dd-MM-yyyy hh:mm tt")</td>
+                                                <td>@pass.ExpiryDateTime.ToAppLocalTime().ToString("dd-MM-yyyy hh:mm tt")</td>
                                                 <td>
                                                     <img src="@pass.QRCodePath" style="width: 32px; height: 32px;" class="border rounded" alt="QR" />
                                                 </td>

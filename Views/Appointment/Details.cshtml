@@ -85,10 +85,7 @@
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-body p-4 d-flex justify-content-between align-items-center flex-wrap gap-2 fs-7">
                     <div class="text-muted">
-                        <i class="fa-solid fa-calendar-day me-1"></i>Created On: <strong class="text-dark">@Model.CreatedDate.ToLocalTime().ToString("dd-MM-yyyy hh:mm tt")</strong>
-                    </div>
-                    <div class="text-muted">
-                        <i class="fa-solid fa-shield me-1"></i>Database Record: <strong class="text-dark">UTC Timestamp Stored</strong>
+                        <i class="fa-solid fa-calendar-day me-1"></i>Created On: <strong class="text-dark">@Model.CreatedDate.ToAppLocalTime().ToString("dd-MM-yyyy hh:mm tt")</strong>
                     </div>
                 </div>
             </div>

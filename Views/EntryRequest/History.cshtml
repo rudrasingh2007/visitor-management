@@ -48,8 +48,8 @@
                         {
                             <tr>
                                 <td class="small text-dark">
-                                    @(request.ApprovalDateTime.HasValue ? request.ApprovalDateTime.Value.ToLocalTime().ToString("dd MMM yyyy") : "-")
-                                    <span class="text-muted d-block fs-8">@(request.ApprovalDateTime.HasValue ? request.ApprovalDateTime.Value.ToLocalTime().ToString("hh:mm tt") : "")</span>
+                                    @(request.ApprovalDateTime.HasValue ? request.ApprovalDateTime.Value.ToAppLocalTime().ToString("dd MMM yyyy") : "-")
+                                    <span class="text-muted d-block fs-8">@(request.ApprovalDateTime.HasValue ? request.ApprovalDateTime.Value.ToAppLocalTime().ToString("hh:mm tt") : "")</span>
                                 </td>
                                 <td class="fw-semibold text-dark">@(request.Visitor != null ? $"{request.Visitor.FirstName} {request.Visitor.LastName}" : "-")</td>
                                 <td class="text-muted small">@(request.Visitor?.MobileNumber ?? "-")</td>

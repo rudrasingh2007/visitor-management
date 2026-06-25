@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using VisitorManagementSystem.Data;
+using VisitorManagementSystem.Helpers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -18,8 +19,10 @@ builder.Services.AddSession(options =>
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });
-
 var app = builder.Build();
+
+// Initialize TimeZone globally
+TimeZoneHelper.Initialize(app.Services.GetRequiredService<IConfiguration>());
 
 // Configure the HTTP request pipeline.
 app.UseExceptionHandler("/Home/Error");
@@ -34,6 +37,8 @@ app.UseRouting();
 
 // Enable session state (must be placed before UseAuthorization)
 app.UseSession();
+
+app.UseMiddleware<VisitorManagementSystem.Middleware.RememberMeMiddleware>();
 
 app.UseAuthorization();
 

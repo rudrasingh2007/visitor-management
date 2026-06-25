@@ -144,6 +144,9 @@ namespace VisitorManagementSystem.Controllers
                 // Approved Requests
                 model.ApprovedAppointments = await _context.EntryRequestMasters.CountAsync(r => r.ApprovalStatus == "Approved");
 
+                // Pending Appointments
+                model.AdminPendingAppointments = await _context.AppointmentMasters.CountAsync(a => a.Status == "Pending");
+
                 // Visitors Currently Inside
                 model.VisitorsCurrentlyInside = await _context.VisitEntryMasters
                     .CountAsync(v => v.VisitStatus == "Checked In");

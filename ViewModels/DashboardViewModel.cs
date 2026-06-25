@@ -12,6 +12,7 @@ namespace VisitorManagementSystem.ViewModels
         public int VisitorsCurrentlyInside { get; set; }
         public int TotalVisitsToday { get; set; }
         public int GatePassesToday { get; set; }
+        public int AdminPendingAppointments { get; set; }
 
         // Chart Data - Daily Trend (Last 7 Days)
         public List<string> DailyTrendLabels { get; set; } = new();

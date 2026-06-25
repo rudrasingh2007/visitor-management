@@ -3,6 +3,7 @@
 @{
     var fullName = HttpContextAccessor.HttpContext?.Session.GetString("FullName") ?? "Guest User";
     var roleName = HttpContextAccessor.HttpContext?.Session.GetString("RoleName") ?? "Guest";
+    var userPhoto = HttpContextAccessor.HttpContext?.Session.GetString("UserPhoto");
     
     var currentController = ViewContext.RouteData.Values["controller"]?.ToString();
     var isUserMgmtOpen = currentController == "User" || currentController == "Role" || currentController == "RoleRights";
@@ -247,14 +248,7 @@
                 <h5 class="m-0 text-white fw-bold"><i class="fa-solid fa-id-card-clip me-2"></i>VMS</h5>
             </div>
             
-            <!-- User Info Sidebar Panel -->
-            <div class="p-3 text-center border-bottom border-secondary border-opacity-25">
-                <div class="avatar-circle mx-auto mb-2 bg-white text-primary d-flex align-items-center justify-content-center fw-bold fs-4 shadow-sm" style="width:50px; height:50px; border-radius: 50%;">
-                    @fullName.Substring(0, Math.Min(2, fullName.Length)).ToUpper()
-                </div>
-                <div class="fw-bold text-white small">@fullName</div>
-                <div class="text-white-50 small fs-8">@roleName</div>
-            </div>
+
 
             <div class="list-group list-group-flush sidebar">
                 <!-- Dashboard -->
@@ -393,13 +387,6 @@
 
                     </div>
                 }
-                <!-- Divider -->
-                <div class="border-top border-secondary border-opacity-25 my-2"></div>
-
-                <!-- Logout -->
-                <a asp-controller="Account" asp-action="Logout" class="list-group-item list-group-item-action text-danger fw-semibold">
-                    <i class="fa-solid fa-right-from-bracket"></i>Logout
-                </a>
             </div>
         </div>
 
@@ -414,9 +401,16 @@
                 <div class="d-flex align-items-center">
                     <div class="dropdown">
                         <div class="user-profile-nav dropdown-toggle" id="dropdownUser" data-bs-toggle="dropdown" aria-expanded="false">
-                            <div class="avatar-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold me-2 shadow-sm" style="width:35px; height:35px; border-radius: 50%; font-size:0.85rem;">
-                                @fullName.Substring(0, Math.Min(2, fullName.Length)).ToUpper()
-                            </div>
+                            @if (!string.IsNullOrEmpty(userPhoto))
+                            {
+                                <img src="~/img/users/@userPhoto" alt="User Photo" class="me-2 shadow-sm" style="width:35px; height:35px; border-radius: 50%; object-fit: cover;" />
+                            }
+                            else
+                            {
+                                <div class="avatar-circle bg-primary text-white d-flex align-items-center justify-content-center fw-bold me-2 shadow-sm" style="width:35px; height:35px; border-radius: 50%; font-size:0.85rem;">
+                                    @fullName.Substring(0, Math.Min(2, fullName.Length)).ToUpper()
+                                </div>
+                            }
                             <span class="d-none d-md-inline text-dark fw-semibold">@fullName</span>
                         </div>
                         <ul class="dropdown-menu dropdown-menu-end shadow border-0 mt-2" aria-labelledby="dropdownUser">
@@ -425,6 +419,16 @@
                                 <span class="small text-muted">@roleName</span>
                             </li>
                             <li><hr class="dropdown-divider"></li>
+                            <li>
+                                <a class="dropdown-item text-dark" asp-controller="Account" asp-action="Profile">
+                                    <i class="fa-solid fa-id-card-clip me-2"></i>View Profile
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item text-dark" asp-controller="Account" asp-action="ChangePassword">
+                                    <i class="fa-solid fa-key me-2"></i>Change Password
+                                </a>
+                            </li>
                             <li>
                                 <a class="dropdown-item text-danger" asp-controller="Account" asp-action="Logout">
                                     <i class="fa-solid fa-right-from-bracket me-2"></i>Logout
@@ -468,6 +472,12 @@
                 $("#wrapper").toggleClass("toggled");
                 $("#sidebar-wrapper").toggleClass("toggled");
                 $("#page-content-wrapper").toggleClass("toggled");
+            });
+
+            // Initialize all tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
             });
 
             // Auto-disable button and show loading spinner during form submission

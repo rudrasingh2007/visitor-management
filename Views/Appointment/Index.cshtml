@@ -152,22 +152,44 @@
                                     <a asp-action="Details" asp-route-id="@item.AppointmentId" class="btn btn-sm btn-outline-info me-1 rounded-2" title="View Details">
                                         <i class="fa-solid fa-circle-info"></i>
                                     </a>
-                                    <!-- Convert to Entry Request -->
-                                    @if (item.Status == "Scheduled")
-                                    {
-                                        <a asp-controller="EntryRequest" asp-action="ConvertAppointment" asp-route-id="@item.AppointmentId" class="btn btn-sm btn-outline-success me-1 rounded-2" title="Convert to Entry Request">
-                                            <i class="fa-solid fa-exchange-alt"></i>
-                                        </a>
-                                    }
                                     <!-- Edit -->
-                                    <a asp-action="Edit" asp-route-id="@item.AppointmentId" class="btn btn-sm btn-outline-primary rounded-2" title="Edit Appointment">
+                                    <a asp-action="Edit" asp-route-id="@item.AppointmentId" class="btn btn-sm btn-outline-primary me-1 rounded-2" title="Edit Appointment">
                                         <i class="fa-solid fa-pen-to-square"></i>
                                     </a>
+                                    <!-- Cancel -->
+                                    @if (item.Status == "Pending" || item.Status == "Scheduled" || item.Status == "Approved")
+                                    {
+                                        <form asp-action="Cancel" asp-route-id="@item.AppointmentId" method="post" class="d-inline cancel-appt-form">
+                                            @Html.AntiForgeryToken()
+                                            <button type="button" class="btn btn-sm btn-outline-danger rounded-2 btn-cancel-appt" title="Cancel Appointment">
+                                                <i class="fa-solid fa-ban"></i>
+                                            </button>
+                                        </form>
+                                    }
                                 </td>
                             </tr>
                         }
                     </tbody>
                 </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Confirmation Modal -->
+<div class="modal fade" id="cancelApptModal" tabindex="-1" aria-labelledby="cancelApptModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-4 border-0 shadow">
+            <div class="modal-header border-bottom-0 pb-0">
+                <h5 class="modal-title fw-bold text-dark" id="cancelApptModalLabel">Cancel Appointment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body py-3">
+                <p class="text-muted mb-0">Are you sure you want to cancel this appointment? This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-light rounded-pill px-4" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-danger rounded-pill px-4" id="confirmCancelBtn">Yes, Cancel</button>
             </div>
         </div>
     </div>
@@ -293,6 +315,20 @@
                 
                 table.columns().search('').draw();
                 table.draw();
+            });
+            // Cancel Appointment Modal Logic
+            var formToSubmit;
+            $('.btn-cancel-appt').on('click', function(e) {
+                e.preventDefault();
+                formToSubmit = $(this).closest('form');
+                var cancelModal = new bootstrap.Modal(document.getElementById('cancelApptModal'));
+                cancelModal.show();
+            });
+
+            $('#confirmCancelBtn').on('click', function() {
+                if(formToSubmit) {
+                    formToSubmit.submit();
+                }
             });
         });
     </script>

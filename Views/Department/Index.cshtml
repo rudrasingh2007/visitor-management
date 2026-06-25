@@ -78,7 +78,7 @@
                             <tr>
                                 <td>
                                     <div class="fw-bold text-dark">@item.DepartmentName</div>
-                                    <span class="small text-muted">Created: @item.CreatedDate.ToLocalTime().ToString("dd MMM yyyy")</span>
+                                    <span class="small text-muted">Created: @item.CreatedDate.ToAppLocalTime().ToString("dd MMM yyyy")</span>
                                 </td>
                                 <td>@(string.IsNullOrEmpty(item.Description) ? "-" : item.Description)</td>
                                 <td class="text-center">
@@ -101,19 +101,21 @@
                                     </form>
                                 </td>
                                 <td class="text-end">
-                                    <!-- Details -->
-                                    <a asp-action="Details" asp-route-id="@item.DepartmentId" class="btn btn-sm btn-outline-info me-1 rounded-2" title="View Details">
-                                        <i class="fa-solid fa-circle-info"></i>
-                                    </a>
-                                    <!-- Edit -->
-                                    <a asp-action="Edit" asp-route-id="@item.DepartmentId" class="btn btn-sm btn-outline-primary me-1 rounded-2" title="Edit Department">
-                                        <i class="fa-solid fa-pen-to-square"></i>
-                                    </a>
-                                    <!-- Delete -->
-                                    <button type="button" class="btn btn-sm btn-outline-danger rounded-2 btn-delete-dept" 
-                                            data-id="@item.DepartmentId" data-name="@item.DepartmentName" title="Delete Department">
-                                        <i class="fa-solid fa-trash-can"></i>
-                                    </button>
+                                    <div class="d-flex justify-content-end gap-1">
+                                        <!-- Details -->
+                                        <a asp-action="Details" asp-route-id="@item.DepartmentId" class="btn btn-sm btn-outline-info rounded-2" title="View Details">
+                                            <i class="fa-solid fa-circle-info"></i>
+                                        </a>
+                                        <!-- Edit -->
+                                        <a asp-action="Edit" asp-route-id="@item.DepartmentId" class="btn btn-sm btn-outline-primary rounded-2" title="Edit Department">
+                                            <i class="fa-solid fa-pen-to-square"></i>
+                                        </a>
+                                        <!-- Delete -->
+                                        <button type="button" class="btn btn-sm btn-outline-danger rounded-2 btn-delete-dept" 
+                                                data-id="@item.DepartmentId" data-name="@item.DepartmentName" title="Delete Department">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </div>
                                 </td>
                             </tr>
                         }

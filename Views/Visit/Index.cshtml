@@ -56,12 +56,12 @@
                             <td class="fw-semibold text-dark">@(item.Visitor != null ? $"{item.Visitor.FirstName} {item.Visitor.LastName}" : "-")</td>
                             <td class="small">@(item.Employee != null ? $"{item.Employee.FirstName} {item.Employee.LastName}" : "-")</td>
                             <td class="small text-dark" data-order="@(item.CheckInTime.HasValue ? item.CheckInTime.Value.ToString("yyyyMMddHHmmss") : "00000000000000")">
-                                @(item.CheckInTime.HasValue ? item.CheckInTime.Value.ToLocalTime().ToString("dd MMM yyyy") : "-")
-                                <span class="text-muted d-block fs-8">@(item.CheckInTime.HasValue ? item.CheckInTime.Value.ToLocalTime().ToString("hh:mm tt") : "")</span>
+                                @(item.CheckInTime.HasValue ? item.CheckInTime.Value.ToAppLocalTime().ToString("dd MMM yyyy") : "-")
+                                <span class="text-muted d-block fs-8">@(item.CheckInTime.HasValue ? item.CheckInTime.Value.ToAppLocalTime().ToString("hh:mm tt") : "")</span>
                             </td>
                             <td class="small text-dark">
-                                @(item.CheckOutTime.HasValue ? item.CheckOutTime.Value.ToLocalTime().ToString("dd MMM yyyy") : "-")
-                                <span class="text-muted d-block fs-8">@(item.CheckOutTime.HasValue ? item.CheckOutTime.Value.ToLocalTime().ToString("hh:mm tt") : "")</span>
+                                @(item.CheckOutTime.HasValue ? item.CheckOutTime.Value.ToAppLocalTime().ToString("dd MMM yyyy") : "-")
+                                <span class="text-muted d-block fs-8">@(item.CheckOutTime.HasValue ? item.CheckOutTime.Value.ToAppLocalTime().ToString("hh:mm tt") : "")</span>
                             </td>
                             <td class="fw-bold text-secondary fs-8">@durationText</td>
                             @{
@@ -172,7 +172,8 @@
                     { "orderable": false, "targets": -1 }
                 ],
                 "language": {
-                    "search": "Filter Visits:",
+                    "search": "",
+                    "searchPlaceholder": "Search visits...",
                     "lengthMenu": "Show _MENU_ entries"
                 },
                 "buttons": [

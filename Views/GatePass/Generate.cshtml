@@ -262,6 +262,8 @@
                     
                     placeholder.style.display = 'none';
                     video.style.display = 'none';
+                    photoPreview.style.objectFit = 'cover';
+                    photoPreview.style.padding = '0';
                     photoPreview.style.display = 'block';
                     
                     hiddenPhotoInput.value = ''; // Empty so backend doesn't overwrite
@@ -295,7 +297,9 @@
                 
                 placeholder.style.display = 'none';
                 video.style.display = 'none';
-                photoPreview.src = '/img/default_user.png';
+                photoPreview.src = '/img/default_user.svg';
+                photoPreview.style.objectFit = 'contain';
+                photoPreview.style.padding = '50px';
                 photoPreview.style.display = 'block';
                 
                 hiddenPhotoInput.value = ''; // Empty
@@ -319,6 +323,8 @@
                 hiddenPhotoInput.value = base64Data;
                 
                 photoPreview.src = base64Data;
+                photoPreview.style.objectFit = 'cover';
+                photoPreview.style.padding = '0';
                 photoPreview.style.display = 'block';
                 video.style.display = 'none';
                 

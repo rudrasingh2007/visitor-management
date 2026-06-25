@@ -129,8 +129,8 @@
                     MobileNumber = Model.Visitor?.MobileNumber,
                     EmployeeName = Model.Employee?.FirstName + " " + Model.Employee?.LastName,
                     Purpose = Model.EntryRequest?.Purpose ?? Model.VisitEntry?.Appointment?.Purpose ?? "N/A",
-                    VisitDate = Model.VisitEntry?.CheckInTime?.ToLocalTime().ToString("dd-MM-yyyy") ?? Model.IssueDateTime.ToLocalTime().ToString("dd-MM-yyyy"),
-                    CheckInTime = Model.VisitEntry?.CheckInTime?.ToLocalTime().ToString("hh:mm tt") ?? "Pending Check-In",
+                    VisitDate = Model.VisitEntry?.CheckInTime?.ToAppLocalTime().ToString("dd-MM-yyyy") ?? Model.IssueDateTime.ToAppLocalTime().ToString("dd-MM-yyyy"),
+                    CheckInTime = Model.VisitEntry?.CheckInTime?.ToAppLocalTime().ToString("hh:mm tt") ?? "Pending Check-In",
                     Status = Model.Status,
                     PhotoPath = Model.Visitor?.PhotoPath,
                     QRCodePath = Model.QRCodePath

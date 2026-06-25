@@ -10,6 +10,7 @@ using System.Threading.Tasks;
 using VisitorManagementSystem.Data;
 using VisitorManagementSystem.Filters;
 using VisitorManagementSystem.Models;
+using VisitorManagementSystem.Helpers;
 using VisitorManagementSystem.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 
@@ -132,7 +133,7 @@ namespace VisitorManagementSystem.Controllers
             var appointment = await _context.AppointmentMasters.FindAsync(visit.AppointmentId);
             if (appointment != null)
             {
-                appointment.Status = "Checked Out";
+                appointment.Status = "Completed";
             }
 
             // Close the linked active gate pass record
@@ -153,8 +154,8 @@ namespace VisitorManagementSystem.Controllers
                 }
                 var visitorName = visit.Visitor != null ? $"{visit.Visitor.FirstName} {visit.Visitor.LastName}" : "Unknown";
                 var employeeName = visit.Employee != null ? $"{visit.Employee.FirstName} {visit.Employee.LastName}" : "Unknown";
-                var checkInStr = visit.CheckInTime.HasValue ? visit.CheckInTime.Value.ToLocalTime().ToString("dd-MM-yyyy hh:mm tt") : "Pending";
-                var checkOutStr = visit.CheckOutTime?.ToLocalTime().ToString("dd-MM-yyyy hh:mm tt") ?? "N/A";
+                var checkInStr = visit.CheckInTime.HasValue ? visit.CheckInTime.Value.ToAppLocalTime().ToString("dd-MM-yyyy hh:mm tt") : "Pending";
+                var checkOutStr = visit.CheckOutTime?.ToAppLocalTime().ToString("dd-MM-yyyy hh:mm tt") ?? "N/A";
                 
                 var qrPayload = $"GATEPASS:{gatePass.GatePassNumber}|VISITOR:{visit.VisitorId}|REF:{visit.AppointmentId ?? visit.EntryRequestId ?? 0}|STATUS:CHECKED_OUT";
 
@@ -221,7 +222,7 @@ namespace VisitorManagementSystem.Controllers
                                 $"Visitor: {visitorName}\n" +
                                 $"Visitor ID: {visit.VisitorId}\n" +
                                 $"Host: {employeeName}\n" +
-                                $"Check-In: {(visit.CheckInTime.HasValue ? visit.CheckInTime.Value.ToLocalTime().ToString("dd-MM-yyyy hh:mm tt") : "Pending")}\n" +
+                                $"Check-In: {(visit.CheckInTime.HasValue ? visit.CheckInTime.Value.ToAppLocalTime().ToString("dd-MM-yyyy hh:mm tt") : "Pending")}\n" +
                                 $"Status: {visit.VisitStatus}\n" +
                                 $"Link: http://localhost:5000/GatePass/Verify?number={gatePassNumber}";
 

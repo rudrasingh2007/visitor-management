@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
 
 namespace VisitorManagementSystem.ViewModels
 {
@@ -24,12 +25,13 @@ namespace VisitorManagementSystem.ViewModels
         public string Email { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Mobile Number is required.")]
-        [StringLength(15, ErrorMessage = "Mobile number cannot exceed 15 characters.")]
-        [RegularExpression(@"^[0-9]{10,15}$", ErrorMessage = "Mobile Number must be between 10 and 15 digits.")]
+        [StringLength(10, MinimumLength = 10, ErrorMessage = "Mobile number must contain exactly 10 digits.")]
+        [RegularExpression(@"^[0-9]{10}$", ErrorMessage = "Mobile number must contain exactly 10 digits.")]
         [Display(Name = "Mobile Number")]
         public string MobileNumber { get; set; } = string.Empty;
 
         [StringLength(100, ErrorMessage = "Password cannot exceed 100 characters.")]
+        [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$", ErrorMessage = "Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.")]
         public string? Password { get; set; }
 
         [Required(ErrorMessage = "Role selection is mandatory.")]
@@ -44,5 +46,10 @@ namespace VisitorManagementSystem.ViewModels
 
         [Display(Name = "Select Employee")]
         public int? EmployeeId { get; set; }
+
+        [Display(Name = "Profile Photo")]
+        public IFormFile? Photo { get; set; }
+
+        public string? PhotoPath { get; set; }
     }
 }

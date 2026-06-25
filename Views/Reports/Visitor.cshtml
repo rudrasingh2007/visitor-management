@@ -153,8 +153,8 @@
                                         <span class="badge bg-danger-subtle text-danger px-2 py-1 fs-8 rounded-pill">Inactive</span>
                                     }
                                 </td>
-                                <td class="created-date" data-date="@item.CreatedDate.ToLocalTime().ToString("yyyy-MM-dd")" data-order="@item.CreatedDate.ToString("yyyyMMddHHmmss")">
-                                    @item.CreatedDate.ToLocalTime().ToString("dd MMM yyyy hh:mm tt")
+                                <td class="created-date" data-date="@item.CreatedDate.ToAppLocalTime().ToString("yyyy-MM-dd")" data-order="@item.CreatedDate.ToString("yyyyMMddHHmmss")">
+                                    @item.CreatedDate.ToAppLocalTime().ToString("dd MMM yyyy hh:mm tt")
                                 </td>
                             </tr>
                         }

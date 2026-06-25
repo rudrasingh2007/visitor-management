@@ -28,8 +28,8 @@ namespace VisitorManagementSystem.Models
         public string Email { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Mobile Number is required.")]
-        [StringLength(15, ErrorMessage = "Mobile number cannot exceed 15 characters.")]
-        [RegularExpression(@"^[0-9]{10,15}$", ErrorMessage = "Mobile Number must be between 10 and 15 digits.")]
+        [StringLength(10, MinimumLength = 10, ErrorMessage = "Mobile number must contain exactly 10 digits.")]
+        [RegularExpression(@"^[0-9]{10}$", ErrorMessage = "Mobile number must contain exactly 10 digits.")]
         [Column("MobileNumber")]
         public string MobileNumber { get; set; } = string.Empty;
 
@@ -59,7 +59,21 @@ namespace VisitorManagementSystem.Models
         [Column("EmployeeId")]
         public int? EmployeeId { get; set; }
 
+        [Column("PhotoPath")]
+        [StringLength(255)]
+        public string? PhotoPath { get; set; }
+
         [ForeignKey("EmployeeId")]
         public virtual EmployeeMaster? Employee { get; set; }
+
+        // Lockout fields
+        [Column("FailedLoginAttempts")]
+        public int FailedLoginAttempts { get; set; } = 0;
+
+        [Column("LockoutEnd")]
+        public DateTime? LockoutEnd { get; set; }
+
+        [Column("LockoutLevel")]
+        public int LockoutLevel { get; set; } = 0;
     }
 }

@@ -87,21 +87,8 @@
                         <span asp-validation-for="AppointmentTime" class="text-danger small mt-1 d-block"></span>
                     </div>
 
-                    <!-- Appointment Status -->
-                    <div class="col-12 col-md-6">
-                        <label asp-for="Status" class="form-label fw-semibold text-secondary">Appointment Status <span class="text-danger">*</span></label>
-                        <div class="input-group">
-                            <span class="input-group-text bg-light border-end-0 rounded-start-3 text-muted"><i class="fa-solid fa-circle-question"></i></span>
-                            <select asp-for="Status" class="form-select border-start-0 rounded-end-3" id="Status">
-                                <option value="Pending">Pending</option>
-                                <option value="Approved">Approved</option>
-                                <option value="Rejected">Rejected</option>
-                                <option value="Cancelled">Cancelled</option>
-                                <option value="Completed">Completed</option>
-                            </select>
-                        </div>
-                        <span asp-validation-for="Status" class="text-danger small mt-1 d-block"></span>
-                    </div>
+                    <!-- Appointment Status (Hidden, Automatic) -->
+                    <input type="hidden" asp-for="Status" />
 
                     <!-- Purpose of Visit -->
                     <div class="col-12">

@@ -23,7 +23,7 @@
         <div class="col-12 col-lg-8">
             <div class="card border-0 shadow-sm rounded-4">
                 <div class="card-body p-4">
-                    <form asp-action="Edit" method="post" autocomplete="off">
+                    <form asp-action="Edit" method="post" autocomplete="off" enctype="multipart/form-data">
                         @Html.AntiForgeryToken()
                         
                         <input type="hidden" asp-for="UserId" />
@@ -93,6 +93,27 @@
                                     <option value="">-- Select Employee --</option>
                                 </select>
                                 <span asp-validation-for="EmployeeId" class="text-danger small"></span>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <!-- Profile Photo Upload -->
+                            <div class="col-md-6 mb-4">
+                                <label asp-for="Photo" class="form-label fw-semibold text-dark">Update Profile Photo</label>
+                                <input asp-for="Photo" type="file" class="form-control rounded-2 p-2" accept="image/*" />
+                                <span asp-validation-for="Photo" class="text-danger small"></span>
+                                <input type="hidden" asp-for="PhotoPath" />
+                            </div>
+                            
+                            <!-- Profile Photo Preview -->
+                            <div class="col-md-6 mb-4 d-flex align-items-center">
+                                @if (!string.IsNullOrEmpty(Model.PhotoPath))
+                                {
+                                    <div class="me-3">
+                                        <img src="~/img/users/@Model.PhotoPath" alt="Current Photo" class="img-thumbnail" style="width: 80px; height: 80px; object-fit: cover; border-radius: 50%;" />
+                                    </div>
+                                    <span class="text-muted small">Current Photo</span>
+                                }
                             </div>
                         </div>
 
