@@ -209,9 +209,13 @@
                                                     {
                                                         <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-1 fs-8">Cancelled</span>
                                                     }
-                                                    else if (appt.Status == "Checked Out")
+                                                    else if (appt.Status == "Completed")
                                                     {
-                                                        <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-1 fs-8">Checked Out</span>
+                                                        <span class="badge bg-primary-subtle text-primary rounded-pill px-2 py-1 fs-8">Completed</span>
+                                                    }
+                                                    else
+                                                    {
+                                                        <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-1 fs-8">@appt.Status</span>
                                                     }
                                                 </td>
                                                 <td class="text-truncate" style="max-width: 150px;" title="@appt.Purpose">@appt.Purpose</td>

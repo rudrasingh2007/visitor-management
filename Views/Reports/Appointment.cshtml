@@ -91,7 +91,7 @@
                         <option value="Approved">Approved</option>
                         <option value="Rejected">Rejected</option>
                         <option value="Cancelled">Cancelled</option>
-                        <option value="Checked Out">Checked Out</option>
+                        <option value="Completed">Completed</option>
                     </select>
                 </div>
                 <!-- Department Filter -->
@@ -178,9 +178,13 @@
                                     {
                                         <span class="badge bg-secondary-subtle text-secondary px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-ban me-1"></i>Cancelled</span>
                                     }
-                                    else if (item.Status == "Checked Out")
+                                    else if (item.Status == "Completed")
                                     {
-                                        <span class="badge bg-primary-subtle text-primary px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-check-double me-1"></i>Checked Out</span>
+                                        <span class="badge bg-primary-subtle text-primary px-3 py-2 fs-8 rounded-pill"><i class="fa-solid fa-check-double me-1"></i>Completed</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary-subtle text-secondary px-3 py-2 fs-8 rounded-pill">@item.Status</span>
                                     }
                                 </td>
                                 <td class="text-truncate" style="max-width: 150px;" title="@item.Purpose">@item.Purpose</td>
