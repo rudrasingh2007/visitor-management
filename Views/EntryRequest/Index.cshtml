@@ -137,7 +137,7 @@
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" id="modalRequestId" value="" />
                 <div class="modal-body py-3">
-                    <p class="text-muted small mb-3">Please provide any remarks/notes for this action.</p>
+                    <h5 id="rejectWarningText" class="fw-bold text-danger mb-2" style="display:none;">Are you sure?</h5><p class="text-muted small mb-3">Please provide any remarks/notes for this action.</p>
                     <div class="mb-3">
                         <label for="approvalRemarks" class="form-label fw-semibold text-secondary">Remarks <span class="text-danger">*</span></label>
                         <textarea class="form-control rounded-3" id="approvalRemarks" name="approvalRemarks" rows="3" placeholder="Enter remarks here..." required></textarea>
@@ -200,10 +200,12 @@
                 
                 if (action === 'Approve') {
                     $('#remarksModalLabel').text('Approve Entry Request');
+                    $('#rejectWarningText').hide();
                     $('#submitModalBtn').removeClass('btn-danger').addClass('btn-success').text('Approve');
                     $('#approvalRemarks').attr('placeholder', 'Enter approval remarks (e.g., Please proceed to meet)...');
                 } else {
                     $('#remarksModalLabel').text('Reject Entry Request');
+                    $('#rejectWarningText').show();
                     $('#submitModalBtn').removeClass('btn-success').addClass('btn-danger').text('Reject');
                     $('#approvalRemarks').attr('placeholder', 'Enter reason for rejection...');
                 }

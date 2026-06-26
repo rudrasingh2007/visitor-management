@@ -282,6 +282,10 @@ namespace VisitorManagementSystem.Controllers
             {
                 TempData["ErrorMessage"] = "Cannot delete employee because appointments, users, or visit records are linked to this employee.";
             }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"An error occurred during deletion: {ex.Message}";
+            }
             return RedirectToAction(nameof(Index));
         }
 

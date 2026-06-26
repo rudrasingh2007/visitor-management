@@ -164,4 +164,37 @@
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        $(document).ready(function() {
+            function checkDuplicate(type, value, fieldId) {
+                if (!value) return;
+                
+                $.get('/Visitor/CheckDuplicate', { type: type, value: value }, function(data) {
+                    $('#duplicateWarning').remove(); // remove existing warning
+                    $(fieldId).removeClass('is-invalid border-warning');
+                    
+                    if (data.exists) {
+                        $(fieldId).addClass('is-invalid border-warning');
+                        var msg = type === 'mobile' ? 'This Mobile Number is already registered.' : 'This Email Address is already registered.';
+                        var warningHtml = `
+                            <div id="duplicateWarning" class="alert alert-warning alert-dismissible fade show mb-4" role="alert">
+                                <i class="fa-solid fa-triangle-exclamation me-2"></i>
+                                <strong>Duplicate Detected!</strong> ${msg} You may want to use their existing profile instead of creating a new one.
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        `;
+                        $('form').prepend(warningHtml);
+                    }
+                });
+            }
+
+            $('#MobileNumber').on('blur', function() {
+                checkDuplicate('mobile', $(this).val(), '#MobileNumber');
+            });
+
+            $('#Email').on('blur', function() {
+                checkDuplicate('email', $(this).val(), '#Email');
+            });
+        });
+    </script>
 }

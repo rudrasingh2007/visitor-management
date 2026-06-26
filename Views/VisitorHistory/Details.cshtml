@@ -154,11 +154,11 @@
                                                 <td>
                                                     @if (visit.VisitStatus == "Checked In")
                                                     {
-                                                        <span class="badge bg-warning-subtle text-warning rounded-pill px-2 py-1 fs-8">Checked In</span>
+                                                        <span class="badge bg-info-subtle text-info rounded-pill px-2 py-1 fs-8">Checked In</span>
                                                     }
                                                     else if (visit.VisitStatus == "Checked Out")
                                                     {
-                                                        <span class="badge bg-success-subtle text-success rounded-pill px-2 py-1 fs-8">Checked Out</span>
+                                                        <span class="badge bg-secondary-subtle text-secondary rounded-pill px-2 py-1 fs-8">Checked Out</span>
                                                     }
                                                 </td>
                                                 <td class="text-truncate" style="max-width: 120px;" title="@visit.Remarks">@(visit.Remarks ?? "-")</td>

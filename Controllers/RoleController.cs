@@ -139,6 +139,10 @@ namespace VisitorManagementSystem.Controllers
             {
                 TempData["ErrorMessage"] = "Cannot delete role because users are assigned to this role.";
             }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"An error occurred during deletion: {ex.Message}";
+            }
             return RedirectToAction(nameof(Index));
         }
 

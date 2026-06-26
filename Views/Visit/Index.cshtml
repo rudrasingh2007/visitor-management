@@ -143,6 +143,7 @@
                 @Html.AntiForgeryToken()
                 <input type="hidden" name="id" id="checkOutVisitId" />
                 <div class="modal-body py-3">
+                    <h5 class="fw-bold text-danger mb-2">Are you sure?</h5>
                     <p class="mb-3 text-muted small">Please record visitor check-out logs and remarks before finishing the visit record.</p>
                     <div class="p-3 bg-light rounded-3 mb-3 small">
                         <strong class="text-dark">Visitor Name: </strong><span id="checkOutVisitorName" class="fw-semibold text-primary"></span><br/>

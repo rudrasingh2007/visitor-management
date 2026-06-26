@@ -426,6 +426,10 @@ namespace VisitorManagementSystem.Controllers
             {
                 TempData["ErrorMessage"] = "Cannot delete user because related records exist.";
             }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"An error occurred during deletion: {ex.Message}";
+            }
             return RedirectToAction(nameof(Index));
         }
 

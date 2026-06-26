@@ -183,7 +183,7 @@
                                                 @switch (log.VisitStatus)
                                                 {
                                                     case "Checked In":
-                                                        <span class="badge bg-primary-subtle text-primary px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-arrow-right-to-bracket me-1"></i>Checked In</span>
+                                                        <span class="badge bg-info-subtle text-info px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-arrow-right-to-bracket me-1"></i>Checked In</span>
                                                         break;
                                                     case "In Meeting":
                                                         <span class="badge bg-info-subtle text-info px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-comments me-1"></i>In Meeting</span>
@@ -586,10 +586,10 @@
                                                             <span class="badge bg-danger-subtle text-danger px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-circle-xmark me-1"></i>Rejected</span>
                                                             break;
                                                         case "Cancelled":
-                                                            <span class="badge bg-secondary-subtle text-secondary px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-ban me-1"></i>Cancelled</span>
+                                                            <span class="badge bg-danger-subtle text-danger px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-ban me-1"></i>Cancelled</span>
                                                             break;
                                                         case "Checked Out":
-                                                            <span class="badge bg-info-subtle text-info px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-circle-check me-1"></i>Checked Out</span>
+                                                            <span class="badge bg-secondary-subtle text-secondary px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-circle-check me-1"></i>Checked Out</span>
                                                             break;
                                                         default:
                                                             <span class="badge bg-secondary px-2.5 py-1.5 rounded-pill fs-9">@appt.Status</span>
@@ -644,10 +644,10 @@
                                                     @switch (log.VisitStatus)
                                                     {
                                                         case "Checked In":
-                                                            <span class="badge bg-primary-subtle text-primary px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-arrow-right-to-bracket me-1"></i>Checked In</span>
+                                                            <span class="badge bg-info-subtle text-info px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-arrow-right-to-bracket me-1"></i>Checked In</span>
                                                             break;
                                                         case "Checked Out":
-                                                            <span class="badge bg-success-subtle text-success px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-circle-check me-1"></i>Checked Out</span>
+                                                            <span class="badge bg-secondary-subtle text-secondary px-2.5 py-1.5 rounded-pill fs-9"><i class="fa-solid fa-circle-check me-1"></i>Checked Out</span>
                                                             break;
                                                         default:
                                                             <span class="badge bg-secondary px-2.5 py-1.5 rounded-pill fs-9">@log.VisitStatus</span>

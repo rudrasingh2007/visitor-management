@@ -15,7 +15,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSession(options =>
 {
-    options.IdleTimeout = TimeSpan.FromMinutes(30); // 30 minutes session timeout
+    options.IdleTimeout = TimeSpan.FromMinutes(15); // 15 minutes session timeout
     options.Cookie.HttpOnly = true;
     options.Cookie.IsEssential = true;
 });

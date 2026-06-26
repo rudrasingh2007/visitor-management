@@ -175,10 +175,13 @@ namespace VisitorManagementSystem.Controllers
                 await _context.SaveChangesAsync();
                 TempData["SuccessMessage"] = "Department deleted successfully!";
             }
-            catch (Microsoft.EntityFrameworkCore.DbUpdateException ex)
+            catch (Microsoft.EntityFrameworkCore.DbUpdateException)
             {
-                // Log exception internally (optional here as global handler could also log, but we catch it here to prevent crash)
                 TempData["ErrorMessage"] = "Cannot delete department because employees or appointments are linked to it.";
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"An error occurred during deletion: {ex.Message}";
             }
 
             return RedirectToAction(nameof(Index));

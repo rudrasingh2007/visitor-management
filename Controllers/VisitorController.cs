@@ -258,8 +258,30 @@ namespace VisitorManagementSystem.Controllers
             {
                 TempData["ErrorMessage"] = "Cannot delete visitor because related appointment or visit records exist.";
             }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"An error occurred during deletion: {ex.Message}";
+            }
 
             return RedirectToAction(nameof(Index));
+        }
+        // AJAX Helper: Check for Duplicate Visitor
+        [HttpGet]
+        public async Task<JsonResult> CheckDuplicate(string type, string value)
+        {
+            if (string.IsNullOrWhiteSpace(value)) return Json(new { exists = false });
+            
+            bool exists = false;
+            if (type == "mobile")
+            {
+                exists = await _context.VisitorMasters.AnyAsync(v => v.MobileNumber.Trim() == value.Trim());
+            }
+            else if (type == "email")
+            {
+                exists = await _context.VisitorMasters.AnyAsync(v => v.Email.Trim().ToLower() == value.Trim().ToLower());
+            }
+
+            return Json(new { exists = exists });
         }
     }
 }
